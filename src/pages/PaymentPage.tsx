@@ -8,7 +8,6 @@ const PaymentPage: React.FC = () => {
 
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [transferDate, setTransferDate] = useState('');
-  const [transferAmount, setTransferAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!dateRange.checkIn || !dateRange.checkOut || !guestInfo) {
@@ -35,15 +34,8 @@ const PaymentPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!paymentProof || !transferDate || !transferAmount) {
+    if (!paymentProof || !transferDate) {
       alert('Please fill in all required fields');
-      return;
-    }
-
-    // Validate transfer amount matches booking total
-    const amountNumber = parseInt(transferAmount.replace(/\D/g, ''));
-    if (amountNumber !== pricing.finalPrice) {
-      alert(`Transfer amount must match the booking total: IDR ${pricing.finalPrice.toLocaleString()}`);
       return;
     }
 
@@ -201,38 +193,18 @@ const PaymentPage: React.FC = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-primary-900 mb-2">
-                  Transfer Date *
-                </label>
-                <input
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="input-field"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-primary-900 mb-2">
-                  Transfer Amount (IDR) *
-                </label>
-                <input
-                  type="text"
-                  value={transferAmount}
-                  onChange={(e) => {
-                    // Only allow numbers
-                    const value = e.target.value.replace(/\D/g, '');
-                    setTransferAmount(value ? parseInt(value).toLocaleString() : '');
-                  }}
-                  placeholder="2,000,000"
-                  className="input-field"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-primary-900 mb-2">
+                Transfer Date *
+              </label>
+              <input
+                type="date"
+                value={transferDate}
+                onChange={(e) => setTransferDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="input-field"
+                required
+              />
             </div>
 
             <div className="bg-blue-50 border border-blue-200 p-4">

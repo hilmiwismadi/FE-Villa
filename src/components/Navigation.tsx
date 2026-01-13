@@ -61,7 +61,7 @@ const Navigation: React.FC = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-primary-200">
+          <div className="md:hidden py-4 px-4 border-t border-primary-200">
             <div className="flex flex-col space-y-4">
               <Link
                 to="/"
