@@ -7,7 +7,7 @@ const Navigation: React.FC = () => {
   return (
     <nav className="bg-white border-b border-primary-200 sticky top-0 z-50">
       <div className="container-custom">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-20 px-4 md:px-0">
           {/* Logo */}
           <Link to="/" className="text-2xl md:text-3xl font-serif text-primary-900">
             VILLA SEKIPAN
