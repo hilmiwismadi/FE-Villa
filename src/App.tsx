@@ -7,6 +7,8 @@ import BookingPage from './pages/BookingPage';
 import BookingReviewPage from './pages/BookingReviewPage';
 import PaymentPage from './pages/PaymentPage';
 import ConfirmationPage from './pages/ConfirmationPage';
+import OwnerDashboardPage from './pages/OwnerDashboardPage';
+import AffiliatorDashboardPage from './pages/AffiliatorDashboardPage';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
             <Route path="review" element={<BookingReviewPage />} />
             <Route path="payment" element={<PaymentPage />} />
             <Route path="confirmation/:bookingId" element={<ConfirmationPage />} />
+            <Route path="owner" element={<OwnerDashboardPage />} />
+            <Route path="affiliate" element={<AffiliatorDashboardPage />} />
           </Route>
         </Routes>
       </Router>

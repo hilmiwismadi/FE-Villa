@@ -18,7 +18,7 @@ const VillaPage: React.FC = () => {
 
         <div className="relative z-10 text-center text-white px-6">
           <h1 className="text-5xl md:text-6xl font-serif mb-4">The Villa</h1>
-          <p className="text-xl md:text-2xl font-light">Experience Unparalleled Luxury</p>
+          <p className="text-xl md:text-2xl font-light">Japanese Architecture & Mountain Views</p>
         </div>
       </section>
 
@@ -26,21 +26,22 @@ const VillaPage: React.FC = () => {
       <section className="section-padding bg-white">
         <div className="container-custom max-w-4xl">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-serif text-primary-900 mb-6">Your Private Paradise</h2>
+            <h2 className="text-4xl font-serif text-primary-900 mb-6">Japanese Villa Sekipan</h2>
             <p className="text-lg text-primary-700 leading-relaxed">
-              Villa Sekipan is a masterpiece of contemporary design, seamlessly blending modern luxury
-              with natural beauty. Perched in a serene location, our exclusive villa offers breathtaking
-              views, world-class amenities, and the ultimate privacy for your perfect escape.
+              A masterpiece of Japanese architectural design, Villa Sekipan harmonizes traditional
+              aesthetics with modern comfort. This single-floor villa features clean lines, natural materials,
+              and an emphasis on indoor-outdoor living. Perched in a serene mountain setting, experience
+              breathtaking views from our exclusive rooftop viewing deck while enjoying complete privacy.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="text-center p-6 border border-primary-200">
-              <div className="text-4xl font-serif text-gold-600 mb-2">5</div>
+              <div className="text-4xl font-serif text-gold-600 mb-2">4</div>
               <p className="text-sm uppercase tracking-wider text-primary-700">Bedrooms</p>
             </div>
             <div className="text-center p-6 border border-primary-200">
-              <div className="text-4xl font-serif text-gold-600 mb-2">6</div>
+              <div className="text-4xl font-serif text-gold-600 mb-2">3</div>
               <p className="text-sm uppercase tracking-wider text-primary-700">Bathrooms</p>
             </div>
             <div className="text-center p-6 border border-primary-200">
@@ -66,9 +67,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Infinity Pool</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">Rooftop Viewing Deck</h3>
                 <p className="text-primary-700">
-                  25-meter infinity pool with panoramic views, perfect for morning laps or sunset relaxation.
+                  Exclusive rooftop terrace offering 360-degree panoramic mountain views, perfect for sunrise meditation or stargazing.
                 </p>
               </div>
             </div>
@@ -82,9 +83,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Private Chef</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">Swimming Pool</h3>
                 <p className="text-primary-700">
-                  Enjoy gourmet meals prepared by your personal chef in our fully-equipped professional kitchen.
+                  Serene swimming pool surrounded by natural landscaping, designed for relaxation and contemplation.
                 </p>
               </div>
             </div>
@@ -98,9 +99,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Spa & Wellness</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">BBQ & Outdoor Dining</h3>
                 <p className="text-primary-700">
-                  Private spa room with massage table, sauna, and premium wellness facilities for ultimate relaxation.
+                  Dedicated BBQ area with outdoor dining space, perfect for al fresco meals under the mountain sky.
                 </p>
               </div>
             </div>
@@ -114,9 +115,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Home Theater</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">Indoor Communal Space</h3>
                 <p className="text-primary-700">
-                  State-of-the-art cinema room with 4K projection, surround sound, and plush seating for 12.
+                  Spacious open-plan living area designed in Japanese minimalist style, connecting seamlessly with outdoor spaces.
                 </p>
               </div>
             </div>
@@ -130,9 +131,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Private Garden</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">Energy Efficient Design</h3>
                 <p className="text-primary-700">
-                  Landscaped tropical garden with exotic plants, outdoor lounge areas, and meditation spaces.
+                  Weatherproof construction with energy-efficient systems that harmonize with nature while minimizing environmental impact.
                 </p>
               </div>
             </div>
@@ -146,9 +147,9 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Smart Technology</h3>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">Modern Amenities</h3>
                 <p className="text-primary-700">
-                  Fully automated smart home system, high-speed WiFi throughout, and integrated entertainment systems.
+                  High-speed WiFi, smart climate control, entertainment systems, and parking for up to 5 vehicles.
                 </p>
               </div>
             </div>
@@ -159,34 +160,42 @@ const VillaPage: React.FC = () => {
       {/* Bedrooms */}
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">Luxurious Accommodations</h2>
+          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">Four Beautiful Bedrooms</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <p className="text-lg text-primary-700 leading-relaxed">
+              Each of our four bedrooms is thoughtfully designed with Japanese minimalist aesthetics,
+              featuring natural materials, clean lines, and serene atmospheres. With three well-appointed
+              bathrooms throughout the villa, comfort and privacy are ensured for all guests.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <div className="border border-primary-200 p-6">
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Master Suite</h3>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">Master Bedroom</h3>
               <p className="text-primary-700 mb-4">
-                Expansive master bedroom with king-size bed, private terrace, walk-in closet,
-                and en-suite bathroom with jacuzzi tub and rainfall shower.
+                Spacious master bedroom with premium bedding, en-suite bathroom, and direct access
+                to mountain views through large windows that invite natural light.
               </p>
               <div className="text-sm text-primary-600">
-                <p>• King Bed</p>
-                <p>• Private Terrace</p>
+                <p>• King/Queen Bed</p>
                 <p>• En-suite Bathroom</p>
-                <p>• Ocean View</p>
+                <p>• Mountain Views</p>
+                <p>• Natural Light</p>
               </div>
             </div>
 
             <div className="border border-primary-200 p-6">
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Guest Suites</h3>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">Guest Bedrooms</h3>
               <p className="text-primary-700 mb-4">
-                Four beautifully appointed guest suites, each with queen or king beds,
-                private bathrooms, and elegant furnishings.
+                Three additional bedrooms with comfortable beds, elegant Japanese-inspired decor,
+                and shared access to two additional bathrooms.
               </p>
               <div className="text-sm text-primary-600">
-                <p>• Queen/King Beds</p>
-                <p>• Private Bathrooms</p>
+                <p>• Queen/Twin Beds</p>
+                <p>• Shared Bathrooms</p>
                 <p>• Air Conditioning</p>
-                <p>• Garden/Pool View</p>
+                <p>• Natural Elements</p>
               </div>
             </div>
           </div>
@@ -196,24 +205,24 @@ const VillaPage: React.FC = () => {
       {/* Location */}
       <section className="section-padding bg-primary-50">
         <div className="container-custom max-w-4xl text-center">
-          <h2 className="text-4xl font-serif mb-6 text-primary-900">Prime Location</h2>
+          <h2 className="text-4xl font-serif mb-6 text-primary-900">Serene Mountain Setting</h2>
           <p className="text-lg text-primary-700 leading-relaxed mb-8">
-            Nestled in a tranquil enclave yet conveniently located near pristine beaches,
-            world-class restaurants, and cultural attractions. Experience the perfect balance
-            of privacy and accessibility.
+            Perched in a peaceful mountain location, Villa Sekipan offers the perfect retreat from
+            the bustle of daily life. Surrounded by nature yet accessible to local attractions,
+            experience breathtaking views and tranquil atmosphere that embody Japanese harmony with nature.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Beach</p>
-              <p className="text-primary-600">5 minutes drive</p>
+              <p className="font-semibold text-primary-900 mb-1">Mountain Views</p>
+              <p className="text-primary-600">360° panoramic vistas</p>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Restaurants</p>
-              <p className="text-primary-600">Walking distance</p>
+              <p className="font-semibold text-primary-900 mb-1">Natural Setting</p>
+              <p className="text-primary-600">Private & peaceful</p>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Airport</p>
-              <p className="text-primary-600">45 minutes drive</p>
+              <p className="font-semibold text-primary-900 mb-1">Local Access</p>
+              <p className="text-primary-600">Nearby attractions</p>
             </div>
           </div>
         </div>

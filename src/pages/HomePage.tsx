@@ -18,10 +18,10 @@ const HomePage: React.FC = () => {
 
         <div className="relative z-10 text-center text-white px-6">
           <h1 className="text-5xl md:text-7xl font-serif mb-6 leading-tight">
-            VILLA SEKIPAN
+            JAPANESE VILLA SEKIPAN
           </h1>
           <p className="text-xl md:text-2xl mb-8 font-light tracking-wide max-w-2xl mx-auto">
-            Your Private Sanctuary in Paradise
+            Where Japanese Serenity Meets Mountain Views
           </p>
           <Link to="/book" className="btn-gold inline-block">
             Reserve Your Stay
@@ -34,12 +34,13 @@ const HomePage: React.FC = () => {
         <div className="container-custom">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-4xl md:text-5xl font-serif mb-6 text-primary-900">
-              Luxury Redefined
+              Japanese Architecture Meets Modern Comfort
             </h2>
             <p className="text-lg text-primary-700 leading-relaxed mb-8">
-              Discover an unparalleled experience of elegance and comfort. Villa Sekipan
-              offers a perfect blend of modern luxury and traditional charm, designed
-              for those who appreciate the finer things in life.
+              Experience the harmony of traditional Japanese design principles and contemporary luxury.
+              Villa Sekipan embodies the essence of Japanese aesthetics—minimalist elegance, natural
+              materials, and a seamless connection between indoor and outdoor spaces, all while offering
+              breathtaking mountain views.
             </p>
           </div>
         </div>
@@ -55,9 +56,9 @@ const HomePage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Exclusive Privacy</h3>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">Zen & Tranquility</h3>
               <p className="text-primary-700">
-                Enjoy complete privacy in your own secluded villa with dedicated spaces for relaxation.
+                Embrace Japanese serenity with thoughtfully designed spaces that promote relaxation and mindfulness.
               </p>
             </div>
 
@@ -67,9 +68,9 @@ const HomePage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Premium Amenities</h3>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">Nature Connection</h3>
               <p className="text-primary-700">
-                Experience world-class facilities including infinity pool, spa, and gourmet kitchen.
+                Experience stunning mountain views from every angle, including our exclusive rooftop viewing deck.
               </p>
             </div>
 
@@ -80,9 +81,9 @@ const HomePage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Prime Location</h3>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">Energy Efficient Design</h3>
               <p className="text-primary-700">
-                Nestled in a serene environment with breathtaking views and easy access to attractions.
+                Weatherproof architecture with energy-efficient features that harmonize with the natural environment.
               </p>
             </div>
           </div>
@@ -97,14 +98,14 @@ const HomePage: React.FC = () => {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {[
-              'Infinity Pool',
-              'Private Garden',
-              'Gourmet Kitchen',
-              'Spa & Wellness',
-              'Home Theater',
+              'Rooftop Viewing Deck',
+              'Swimming Pool',
+              'BBQ Area',
+              'Indoor Communal Space',
+              'Mountain Views',
               'WiFi & Smart TV',
               'Air Conditioning',
-              '24/7 Security',
+              'Parking for 5 Cars',
             ].map((amenity, index) => (
               <div key={index} className="text-center">
                 <div className="text-gold-600 mb-2">
