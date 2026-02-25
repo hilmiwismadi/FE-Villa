@@ -1,8 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import heroImage from '../assets/images/hero.png';
+import Calendar from '../components/Calendar';
 
 const HomePage: React.FC = () => {
+  // TODO: Replace with API fetch - GET /api/calendar/booked-dates
+  const bookedDates: Date[] = [];
+  // TODO: Replace with API fetch - GET /api/calendar/blocked-dates
+  const blockedDates: Date[] = [];
+
+  const scrollToAvailability = () => {
+    document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div>
       {/* Hero Section */}
@@ -23,9 +33,9 @@ const HomePage: React.FC = () => {
           <p className="text-xl md:text-2xl mb-8 font-light tracking-wide max-w-2xl mx-auto">
             Where Japanese Serenity Meets Mountain Views
           </p>
-          <Link to="/book" className="btn-gold inline-block">
+          <button onClick={scrollToAvailability} className="btn-gold inline-block">
             Reserve Your Stay
-          </Link>
+          </button>
         </div>
       </section>
 
@@ -116,6 +126,33 @@ const HomePage: React.FC = () => {
                 <p className="text-sm text-primary-700 uppercase tracking-wide">{amenity}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Availability Calendar Section */}
+      <section id="availability" className="section-padding bg-primary-50">
+        <div className="container-custom">
+          <h2 className="text-4xl md:text-5xl font-serif text-center mb-4 text-primary-900">
+            Check Availability
+          </h2>
+          <p className="text-lg text-primary-700 text-center mb-12 max-w-2xl mx-auto">
+            View our current availability and find the perfect dates for your stay.
+          </p>
+
+          <div className="max-w-3xl mx-auto">
+            <Calendar
+              readOnly
+              bookedDates={bookedDates}
+              blockedDates={blockedDates}
+            />
+
+            {/* Book Now Button */}
+            <div className="text-center mt-8">
+              <Link to="/book" className="btn-gold inline-block">
+                Book Now
+              </Link>
+            </div>
           </div>
         </div>
       </section>

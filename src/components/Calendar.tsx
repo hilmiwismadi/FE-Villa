@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
 
 interface CalendarProps {
-  onDateSelect: (date: Date) => void;
-  selectedDates: { checkIn: Date | null; checkOut: Date | null };
+  onDateSelect?: (date: Date) => void;
+  selectedDates?: { checkIn: Date | null; checkOut: Date | null };
   bookedDates?: Date[];
   blockedDates?: Date[];
+  readOnly?: boolean;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates, bookedDates = [], blockedDates = [] }) => {
+const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { checkIn: null, checkOut: null }, bookedDates = [], blockedDates = [], readOnly = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfToday();
 
@@ -113,6 +114,22 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates, booked
           const inRange = isDateInRange(date);
           const disabled = isPast || booked || blocked;
 
+          if (readOnly) {
+            return (
+              <div
+                key={date.toString()}
+                className={`
+                  aspect-square flex items-center justify-center text-sm rounded transition-all
+                  ${disabled ? 'text-primary-300' : 'text-primary-900'}
+                  ${isToday(date) ? 'border-2 border-gold-600' : ''}
+                  ${booked || blocked ? 'bg-red-50 line-through' : ''}
+                `}
+              >
+                {format(date, 'd')}
+              </div>
+            );
+          }
+
           return (
             <button
               key={date.toString()}
@@ -135,17 +152,25 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates, booked
 
       {/* Legend */}
       <div className="mt-6 flex flex-wrap gap-4 text-xs text-primary-700">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-primary-900 rounded"></div>
-          <span>Selected</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-primary-100 rounded"></div>
-          <span>In Range</span>
-        </div>
+        {!readOnly && (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-primary-900 rounded"></div>
+              <span>Selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-primary-100 rounded"></div>
+              <span>In Range</span>
+            </div>
+          </>
+        )}
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-50 rounded border border-red-200"></div>
           <span>Unavailable</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded border-2 border-gold-600"></div>
+          <span>Today</span>
         </div>
       </div>
     </div>
