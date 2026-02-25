@@ -4,12 +4,18 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore,
 interface CalendarProps {
   onDateSelect?: (date: Date) => void;
   selectedDates?: { checkIn: Date | null; checkOut: Date | null };
+  /** Array of individually selected dates (used when multiSelect is true) */
+  selectedDatesList?: Date[];
+  /** Called when a date is toggled in multiSelect mode */
+  onDateToggle?: (dates: Date[]) => void;
   bookedDates?: Date[];
   blockedDates?: Date[];
   readOnly?: boolean;
+  /** Enable click-to-toggle individual dates mode */
+  multiSelect?: boolean;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { checkIn: null, checkOut: null }, bookedDates = [], blockedDates = [], readOnly = false }) => {
+const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { checkIn: null, checkOut: null }, selectedDatesList = [], onDateToggle, bookedDates = [], blockedDates = [], readOnly = false, multiSelect = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfToday();
 
@@ -35,7 +41,13 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
     );
   };
 
+  const isDateInMultiSelect = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
+  };
+
   const isDateSelected = (date: Date) => {
+    if (multiSelect) return isDateInMultiSelect(date);
     if (!selectedDates.checkIn && !selectedDates.checkOut) return false;
 
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -46,6 +58,13 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
   };
 
   const isDateInRange = (date: Date) => {
+    if (multiSelect) {
+      if (selectedDatesList.length < 2) return false;
+      const sorted = [...selectedDatesList].sort((a, b) => a.getTime() - b.getTime());
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      return date > first && date < last && !isDateInMultiSelect(date);
+    }
     if (!selectedDates.checkIn || !selectedDates.checkOut) return false;
     return date > selectedDates.checkIn && date < selectedDates.checkOut;
   };
@@ -54,7 +73,19 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
     if (isBefore(date, today) || isDateBooked(date) || isDateBlocked(date)) {
       return;
     }
-    onDateSelect(date);
+
+    if (multiSelect && onDateToggle) {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const exists = selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
+      if (exists) {
+        onDateToggle(selectedDatesList.filter(d => format(d, 'yyyy-MM-dd') !== dateStr));
+      } else {
+        onDateToggle([...selectedDatesList, date]);
+      }
+      return;
+    }
+
+    if (onDateSelect) onDateSelect(date);
   };
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));

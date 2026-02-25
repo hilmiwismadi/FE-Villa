@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import Calendar from '../components/Calendar';
 import type { GuestInfo } from '../types';
@@ -22,6 +22,11 @@ const BookingPage: React.FC = () => {
   const [step, setStep] = useState<'dates' | 'promo' | 'info'>('dates');
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
+  const [selectedDatesList, setSelectedDatesList] = useState<Date[]>([]);
+  const [showBookingMethodModal, setShowBookingMethodModal] = useState(false);
+
+  // TODO: Replace with API fetch - make dynamic
+  const adminWhatsApp = '6281809252706';
 
   // Guest form state
   const [formData, setFormData] = useState<GuestInfo>({
@@ -38,9 +43,18 @@ const BookingPage: React.FC = () => {
   const bookedDates: Date[] = []; // Get from API
   const blockedDates: Date[] = []; // Get from API
 
-  const numberOfNights = dateRange.checkIn && dateRange.checkOut
-    ? differenceInDays(dateRange.checkOut, dateRange.checkIn)
+  // Derive checkIn/checkOut from selected dates list
+  const sortedDates = [...selectedDatesList].sort((a, b) => a.getTime() - b.getTime());
+  const derivedCheckIn = sortedDates.length >= 2 ? sortedDates[0] : null;
+  const derivedCheckOut = sortedDates.length >= 2 ? sortedDates[sortedDates.length - 1] : null;
+  const numberOfNights = derivedCheckIn && derivedCheckOut
+    ? differenceInDays(derivedCheckOut, derivedCheckIn)
     : 0;
+
+  // Sync derived dates to context
+  useEffect(() => {
+    setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
+  }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime()]);
 
   const calculatePrice = () => {
     if (numberOfNights <= 0) return;
@@ -59,21 +73,10 @@ const BookingPage: React.FC = () => {
 
   useEffect(() => {
     calculatePrice();
-  }, [dateRange, appliedPromo, numberOfNights]);
+  }, [numberOfNights, appliedPromo]);
 
-  const handleDateSelect = (date: Date) => {
-    if (!dateRange.checkIn || (dateRange.checkIn && dateRange.checkOut)) {
-      // Set check-in date
-      setDateRange({ checkIn: date, checkOut: null });
-    } else if (dateRange.checkIn && !dateRange.checkOut) {
-      // Set check-out date
-      if (date > dateRange.checkIn) {
-        setDateRange({ ...dateRange, checkOut: date });
-      } else {
-        // If selected date is before check-in, reset
-        setDateRange({ checkIn: date, checkOut: null });
-      }
-    }
+  const handleDateToggle = (dates: Date[]) => {
+    setSelectedDatesList(dates);
   };
 
   const handleApplyPromo = () => {
@@ -109,15 +112,32 @@ const BookingPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleBookViaWhatsApp = () => {
+    if (!derivedCheckIn || !derivedCheckOut) return;
+
+    const checkInStr = format(derivedCheckIn, 'd MMMM yyyy');
+    const checkOutStr = format(derivedCheckOut, 'd MMMM yyyy');
+    const message = `Permisi, saya ingin booking villa dari tanggal ${checkInStr} hingga ${checkOutStr}, ${numberOfNights} malam. Mohon informasi ketersediaan dan proses booking. Terima kasih.`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${adminWhatsApp}?text=${encoded}`, '_blank');
+    setShowBookingMethodModal(false);
+  };
+
+  const handleBookViaWebsite = () => {
+    setShowBookingMethodModal(false);
+    setStep('promo');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (step === 'dates') {
-      if (!dateRange.checkIn || !dateRange.checkOut) {
-        alert('Please select check-in and check-out dates');
+      if (selectedDatesList.length < 2) {
+        alert('Please select at least 2 dates (check-in and check-out)');
         return;
       }
-      setStep('promo');
+      setShowBookingMethodModal(true);
+      return;
     } else if (step === 'promo') {
       setStep('info');
     } else if (step === 'info') {
@@ -134,7 +154,7 @@ const BookingPage: React.FC = () => {
 
   const canProceed = () => {
     if (step === 'dates') {
-      return dateRange.checkIn && dateRange.checkOut;
+      return selectedDatesList.length >= 2;
     }
     return true;
   };
@@ -185,23 +205,30 @@ const BookingPage: React.FC = () => {
               {/* Step 1: Date Selection */}
               {step === 'dates' && (
                 <div>
+                  <p className="text-sm text-primary-600 mb-4">
+                    Click on dates to select your stay. Click again to deselect.
+                  </p>
                   <Calendar
-                    onDateSelect={handleDateSelect}
-                    selectedDates={dateRange}
+                    multiSelect
+                    selectedDatesList={selectedDatesList}
+                    onDateToggle={handleDateToggle}
                     bookedDates={bookedDates}
                     blockedDates={blockedDates}
                   />
 
-                  {dateRange.checkIn && dateRange.checkOut && (
+                  {derivedCheckIn && derivedCheckOut && (
                     <div className="mt-6 p-4 bg-primary-50 border border-primary-200">
                       <p className="text-sm text-primary-700">
-                        <strong>Check-in:</strong> {dateRange.checkIn.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        <strong>Check-in:</strong> {derivedCheckIn.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                       <p className="text-sm text-primary-700 mt-2">
-                        <strong>Check-out:</strong> {dateRange.checkOut.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        <strong>Check-out:</strong> {derivedCheckOut.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                       <p className="text-sm text-primary-700 mt-2">
                         <strong>Number of nights:</strong> {numberOfNights}
+                      </p>
+                      <p className="text-sm text-primary-500 mt-1">
+                        ({selectedDatesList.length} dates selected)
                       </p>
                     </div>
                   )}
@@ -389,7 +416,7 @@ const BookingPage: React.FC = () => {
               <h3 className="text-xl font-serif text-primary-900 mb-4">Booking Summary</h3>
 
               <div className="space-y-3 text-sm">
-                {dateRange.checkIn && dateRange.checkOut ? (
+                {derivedCheckIn && derivedCheckOut ? (
                   <>
                     <div className="flex justify-between text-primary-700">
                       <span>IDR {basePrice.toLocaleString()} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}</span>
@@ -425,6 +452,71 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Booking Method Modal */}
+      {showBookingMethodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowBookingMethodModal(false)}
+          ></div>
+
+          {/* Modal */}
+          <div className="relative bg-white max-w-md w-full mx-4 p-8 shadow-xl">
+            <button
+              onClick={() => setShowBookingMethodModal(false)}
+              className="absolute top-4 right-4 text-primary-400 hover:text-primary-900 transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="text-2xl font-serif text-primary-900 mb-2">
+              How would you like to book?
+            </h3>
+            <p className="text-sm text-primary-600 mb-8">
+              Choose your preferred booking method to continue.
+            </p>
+
+            <div className="space-y-4">
+              {/* Book via Website */}
+              <button
+                onClick={handleBookViaWebsite}
+                className="w-full flex items-center gap-4 p-4 border-2 border-primary-200 hover:border-gold-600 rounded transition-colors text-left group"
+              >
+                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-gold-50">
+                  <svg className="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-primary-900">Book via Website</p>
+                  <p className="text-sm text-primary-600">Continue with online booking form</p>
+                </div>
+              </button>
+
+              {/* Book via WhatsApp */}
+              <button
+                onClick={handleBookViaWhatsApp}
+                className="w-full flex items-center gap-4 p-4 border-2 border-primary-200 hover:border-green-500 rounded transition-colors text-left group"
+              >
+                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-green-100">
+                  <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-primary-900">Book via WhatsApp</p>
+                  <p className="text-sm text-primary-600">Chat directly with our team</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
