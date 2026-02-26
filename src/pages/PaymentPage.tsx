@@ -158,80 +158,34 @@ const PaymentPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Step 2: Upload Payment Proof */}
+        {/* Actions */}
         <div className="bg-white p-8 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-gold-600 text-white rounded-full flex items-center justify-center font-semibold">
-              2
-            </div>
-            <h2 className="text-2xl font-serif text-primary-900">Upload Payment Proof</h2>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => navigate('/book/review')}
+              className="btn-secondary"
+              disabled={isSubmitting}
+            >
+              Back
+            </button>
+            <button
+              onClick={async () => {
+                setIsSubmitting(true);
+                try {
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  navigate(`/book/confirmation/${bookingReference}`);
+                } catch {
+                  alert('An error occurred. Please try again.');
+                  setIsSubmitting(false);
+                }
+              }}
+              className="btn-gold flex-1"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Booking'}
+            </button>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-primary-900 mb-2">
-                Payment Receipt / Screenshot *
-              </label>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-primary-700
-                  file:mr-4 file:py-2 file:px-4
-                  file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-primary-900 file:text-white
-                  hover:file:bg-primary-800
-                  file:cursor-pointer cursor-pointer"
-                required
-              />
-              <p className="text-xs text-primary-600 mt-1">
-                Supported formats: JPG, PNG, PDF (Max 5MB)
-              </p>
-              {paymentProof && (
-                <p className="text-sm text-green-600 mt-2">✓ File selected: {paymentProof.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-primary-900 mb-2">
-                Transfer Date *
-              </label>
-              <input
-                type="date"
-                value={transferDate}
-                onChange={(e) => setTransferDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Next Steps:</strong> After you submit your payment proof, our team will verify your transfer.
-                You'll receive a confirmation email once your booking is approved (usually within 24 hours).
-              </p>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => navigate('/book/review')}
-                className="btn-secondary"
-                disabled={isSubmitting}
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className="btn-gold flex-1"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Booking'}
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     </div>
