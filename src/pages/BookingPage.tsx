@@ -8,7 +8,7 @@ import type { GuestInfo } from '../types';
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const {
-    dateRange,
+    dateRange: _dateRange,
     setDateRange,
     setGuestInfo,
     promoCode,

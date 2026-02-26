@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, localePath, lang } = useTranslation();
   const {
     selectedDates,
     formData,
@@ -18,14 +20,14 @@ const BookingFormPage: React.FC = () => {
   } = useBooking();
 
   const [promoError, setPromoError] = useState('');
-  const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% discount applied!` : '');
+  const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');
 
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
 
   // Redirect if no dates selected
   if (selectedDates.length < 2 || !derivedCheckIn || !derivedCheckOut) {
-    navigate('/book/calendar');
+    navigate(localePath('/book/calendar'));
     return null;
   }
 
@@ -44,9 +46,9 @@ const BookingFormPage: React.FC = () => {
     const promo = validPromoCodes.find(p => p.code === promoCode.toUpperCase());
     if (promo) {
       setAppliedPromo(promo);
-      setPromoSuccess(`${promo.discountPercentage}% discount applied!`);
+      setPromoSuccess(`${promo.discountPercentage}% ${t.booking.calendar.discountApplied}`);
     } else {
-      setPromoError('Invalid promo code');
+      setPromoError(t.booking.calendar.invalidPromo);
       setAppliedPromo(null);
     }
   };
@@ -61,12 +63,15 @@ const BookingFormPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone) {
-      alert('Please fill in all required fields');
+      alert(t.booking.form.fillRequired);
       return;
     }
     setGuestInfo(formData);
-    navigate('/book/review');
+    navigate(localePath('/book/review'));
   };
+
+  const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
+  const nightCount = selectedDates.length - 1;
 
   return (
     <div className="section-padding bg-primary-50">
@@ -76,17 +81,17 @@ const BookingFormPage: React.FC = () => {
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-2 text-primary-900">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-primary-900 bg-primary-900 text-white">1</div>
-              <span className="hidden md:inline text-sm font-medium">Select Dates</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.selectDates}</span>
             </div>
             <div className="w-12 h-0.5 bg-primary-900"></div>
             <div className="flex items-center gap-2 text-gold-600">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-gold-600 bg-gold-50">2</div>
-              <span className="hidden md:inline text-sm font-medium">Guest Info</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.guestInfo}</span>
             </div>
             <div className="w-12 h-0.5 bg-primary-300"></div>
             <div className="flex items-center gap-2 text-primary-400">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-primary-300">3</div>
-              <span className="hidden md:inline text-sm font-medium">Review</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.review}</span>
             </div>
           </div>
         </div>
@@ -94,13 +99,13 @@ const BookingFormPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white p-8 shadow-sm">
-              <h2 className="text-3xl font-serif text-primary-900 mb-6">Guest Information</h2>
+              <h2 className="text-3xl font-serif text-primary-900 mb-6">{t.booking.form.title}</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Nama */}
                 <div>
                   <label className="block text-sm font-medium text-primary-900 mb-2">
-                    Nama Lengkap *
+                    {t.booking.form.fullName} *
                   </label>
                   <input
                     type="text"
@@ -108,7 +113,7 @@ const BookingFormPage: React.FC = () => {
                     value={formData.fullName}
                     onChange={handleFormChange}
                     className="input-field"
-                    placeholder="Masukkan nama lengkap"
+                    placeholder={t.booking.form.fullNamePlaceholder}
                     required
                   />
                 </div>
@@ -117,7 +122,7 @@ const BookingFormPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      No. Handphone *
+                      {t.booking.form.phone} *
                     </label>
                     <input
                       type="tel"
@@ -125,13 +130,13 @@ const BookingFormPage: React.FC = () => {
                       value={formData.phone}
                       onChange={handleFormChange}
                       className="input-field"
-                      placeholder="08xxxxxxxxxx"
+                      placeholder={t.booking.form.phonePlaceholder}
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Email <span className="text-primary-400 font-normal">(Opsional)</span>
+                      {t.booking.form.email} <span className="text-primary-400 font-normal">({t.booking.form.emailOptional})</span>
                     </label>
                     <input
                       type="email"
@@ -139,7 +144,7 @@ const BookingFormPage: React.FC = () => {
                       value={formData.email}
                       onChange={handleFormChange}
                       className="input-field"
-                      placeholder="email@contoh.com"
+                      placeholder={t.booking.form.emailPlaceholder}
                     />
                   </div>
                 </div>
@@ -147,7 +152,7 @@ const BookingFormPage: React.FC = () => {
                 {/* Alamat */}
                 <div>
                   <label className="block text-sm font-medium text-primary-900 mb-2">
-                    Alamat *
+                    {t.booking.form.address} *
                   </label>
                   <textarea
                     name="address"
@@ -155,7 +160,7 @@ const BookingFormPage: React.FC = () => {
                     onChange={handleFormChange}
                     rows={3}
                     className="input-field resize-none"
-                    placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan"
+                    placeholder={t.booking.form.addressPlaceholder}
                     required
                   ></textarea>
                 </div>
@@ -164,7 +169,7 @@ const BookingFormPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Kota / Kabupaten *
+                      {t.booking.form.city} *
                     </label>
                     <input
                       type="text"
@@ -172,13 +177,13 @@ const BookingFormPage: React.FC = () => {
                       value={formData.city}
                       onChange={handleFormChange}
                       className="input-field"
-                      placeholder="Contoh: Jakarta Selatan"
+                      placeholder={t.booking.form.cityPlaceholder}
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Provinsi *
+                      {t.booking.form.province} *
                     </label>
                     <input
                       type="text"
@@ -186,7 +191,7 @@ const BookingFormPage: React.FC = () => {
                       value={formData.province}
                       onChange={handleFormChange}
                       className="input-field"
-                      placeholder="Contoh: DKI Jakarta"
+                      placeholder={t.booking.form.provincePlaceholder}
                       required
                     />
                   </div>
@@ -196,7 +201,7 @@ const BookingFormPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Jumlah Tamu *
+                      {t.booking.form.numberOfGuests} *
                     </label>
                     <input
                       type="number"
@@ -211,7 +216,7 @@ const BookingFormPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Bed Tambahan
+                      {t.booking.form.extraBed}
                     </label>
                     <select
                       name="extraBed"
@@ -219,10 +224,10 @@ const BookingFormPage: React.FC = () => {
                       onChange={handleFormChange}
                       className="input-field"
                     >
-                      <option value={0}>Tidak perlu</option>
-                      <option value={1}>1 bed tambahan</option>
-                      <option value={2}>2 bed tambahan</option>
-                      <option value={3}>3 bed tambahan</option>
+                      <option value={0}>{t.booking.form.extraBedNone}</option>
+                      <option value={1}>{t.booking.form.extraBedOption.replace('{count}', '1')}</option>
+                      <option value={2}>{t.booking.form.extraBedOption.replace('{count}', '2')}</option>
+                      <option value={3}>{t.booking.form.extraBedOption.replace('{count}', '3')}</option>
                     </select>
                   </div>
                 </div>
@@ -230,7 +235,7 @@ const BookingFormPage: React.FC = () => {
                 {/* Estimasi Check-in */}
                 <div>
                   <label className="block text-sm font-medium text-primary-900 mb-2">
-                    Estimasi Waktu Check-in *
+                    {t.booking.form.checkInTime} *
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {['14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00', '20:00 - 22:00'].map((time) => (
@@ -254,7 +259,7 @@ const BookingFormPage: React.FC = () => {
                 {/* Special Requests */}
                 <div>
                   <label className="block text-sm font-medium text-primary-900 mb-2">
-                    Permintaan Khusus <span className="text-primary-400 font-normal">(Opsional)</span>
+                    {t.booking.form.specialRequests} <span className="text-primary-400 font-normal">({t.booking.form.specialRequestsOptional})</span>
                   </label>
                   <textarea
                     name="specialRequests"
@@ -262,7 +267,7 @@ const BookingFormPage: React.FC = () => {
                     onChange={handleFormChange}
                     rows={3}
                     className="input-field resize-none"
-                    placeholder="Ada permintaan atau kebutuhan khusus?"
+                    placeholder={t.booking.form.specialRequestsPlaceholder}
                   ></textarea>
                 </div>
               </form>
@@ -271,16 +276,16 @@ const BookingFormPage: React.FC = () => {
             {/* Navigation Buttons */}
             <div className="flex gap-4 mt-6">
               <button
-                onClick={() => navigate('/book/calendar')}
+                onClick={() => navigate(localePath('/book/calendar'))}
                 className="btn-secondary"
               >
-                Back
+                {t.booking.form.back}
               </button>
               <button
                 onClick={handleSubmit}
                 className="btn-primary flex-1"
               >
-                Review Booking
+                {t.booking.form.reviewBooking}
               </button>
             </div>
           </div>
@@ -288,30 +293,30 @@ const BookingFormPage: React.FC = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white p-6 shadow-sm sticky top-24">
-              <h3 className="text-xl font-serif text-primary-900 mb-4">Booking Summary</h3>
+              <h3 className="text-xl font-serif text-primary-900 mb-4">{t.booking.calendar.bookingSummary}</h3>
               <div className="space-y-3 text-sm">
                 <div className="text-primary-700">
-                  <p className="text-xs text-primary-500">Check-in</p>
-                  <p className="font-medium">{derivedCheckIn.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="text-xs text-primary-500">{t.booking.calendar.checkIn}</p>
+                  <p className="font-medium">{derivedCheckIn.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 </div>
                 <div className="text-primary-700">
-                  <p className="text-xs text-primary-500">Check-out</p>
-                  <p className="font-medium">{derivedCheckOut.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="text-xs text-primary-500">{t.booking.calendar.checkOut}</p>
+                  <p className="font-medium">{derivedCheckOut.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 </div>
                 <div className="pt-3 border-t border-primary-200">
                   <div className="flex justify-between text-primary-700">
-                    <span>IDR {(pricing.originalPrice / (selectedDates.length - 1 || 1)).toLocaleString()} × {selectedDates.length - 1} malam</span>
+                    <span>IDR {(pricing.originalPrice / (nightCount || 1)).toLocaleString()} × {nightCount} {t.booking.form.nightLabel}</span>
                     <span>IDR {pricing.originalPrice.toLocaleString()}</span>
                   </div>
                   {appliedPromo && (
                     <div className="flex justify-between text-green-600 mt-2">
-                      <span>Diskon ({appliedPromo.discountPercentage}%)</span>
+                      <span>{t.booking.calendar.discount} ({appliedPromo.discountPercentage}%)</span>
                       <span>- IDR {pricing.discountAmount.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="pt-3 mt-3 border-t border-primary-200">
                     <div className="flex justify-between font-semibold text-lg text-primary-900">
-                      <span>Total</span>
+                      <span>{t.booking.calendar.total}</span>
                       <span>IDR {pricing.finalPrice.toLocaleString()}</span>
                     </div>
                   </div>
@@ -320,7 +325,7 @@ const BookingFormPage: React.FC = () => {
 
               {/* Promo Code */}
               <div className="mt-6 pt-4 border-t border-primary-200">
-                <p className="text-sm font-medium text-primary-900 mb-3">Promo Code</p>
+                <p className="text-sm font-medium text-primary-900 mb-3">{t.booking.calendar.promoCode}</p>
                 {!appliedPromo ? (
                   <div>
                     <div className="flex gap-2">
@@ -328,7 +333,7 @@ const BookingFormPage: React.FC = () => {
                         type="text"
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        placeholder="Enter code"
+                        placeholder={t.booking.calendar.enterCode}
                         className="input-field flex-1 uppercase text-sm"
                       />
                       <button
@@ -336,7 +341,7 @@ const BookingFormPage: React.FC = () => {
                         className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors"
                         disabled={!promoCode}
                       >
-                        Apply
+                        {t.booking.calendar.apply}
                       </button>
                     </div>
                     {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}
@@ -347,9 +352,9 @@ const BookingFormPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-green-900">{appliedPromo.code}</p>
-                        <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% discount</p>
+                        <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% {t.booking.calendar.discount.toLowerCase()}</p>
                       </div>
-                      <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">Remove</button>
+                      <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">{t.booking.calendar.remove}</button>
                     </div>
                   </div>
                 )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface CalendarProps {
   onDateSelect?: (date: Date) => void;
@@ -18,6 +19,7 @@ interface CalendarProps {
 const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { checkIn: null, checkOut: null }, selectedDatesList = [], onDateToggle, bookedDates = [], blockedDates = [], readOnly = false, multiSelect = false }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfToday();
+  const { t, dateFnsLocale } = useTranslation();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -98,7 +100,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
         <button
           onClick={prevMonth}
           className="p-2 hover:bg-primary-100 rounded transition-colors"
-          aria-label="Previous month"
+          aria-label={t.calendar.prevMonth}
         >
           <svg className="w-5 h-5 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -106,13 +108,13 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
         </button>
 
         <h3 className="text-lg font-serif text-primary-900">
-          {format(currentMonth, 'MMMM yyyy')}
+          {format(currentMonth, 'MMMM yyyy', { locale: dateFnsLocale })}
         </h3>
 
         <button
           onClick={nextMonth}
           className="p-2 hover:bg-primary-100 rounded transition-colors"
-          aria-label="Next month"
+          aria-label={t.calendar.nextMonth}
         >
           <svg className="w-5 h-5 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -122,7 +124,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
 
       {/* Days of week */}
       <div className="grid grid-cols-7 gap-2 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+        {t.calendar.dayNames.map(day => (
           <div key={day} className="text-center text-sm font-medium text-primary-600 py-2">
             {day}
           </div>
@@ -187,21 +189,21 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
           <>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-primary-900 rounded"></div>
-              <span>Selected</span>
+              <span>{t.calendar.selected}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-primary-100 rounded"></div>
-              <span>In Range</span>
+              <span>{t.calendar.inRange}</span>
             </div>
           </>
         )}
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-50 rounded border border-red-200"></div>
-          <span>Unavailable</span>
+          <span>{t.calendar.unavailable}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded border-2 border-gold-600"></div>
-          <span>Today</span>
+          <span>{t.calendar.today}</span>
         </div>
       </div>
     </div>

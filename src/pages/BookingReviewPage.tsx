@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
+import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays } from 'date-fns';
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, localePath, lang } = useTranslation();
   const {
     dateRange, guestInfo, formData, appliedPromo, setAppliedPromo,
     pricing, setPricing, promoCode, setPromoCode,
@@ -14,12 +16,13 @@ const BookingReviewPage: React.FC = () => {
   const [promoSuccess, setPromoSuccess] = useState('');
 
   if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {
-    navigate('/book/calendar');
+    navigate(localePath('/book/calendar'));
     return null;
   }
 
   const numberOfNights = differenceInDays(dateRange.checkOut, dateRange.checkIn);
   const guest = guestInfo || formData;
+  const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
 
   const basePrice = 2000000; // TODO: Replace with API fetch
 
@@ -44,9 +47,9 @@ const BookingReviewPage: React.FC = () => {
     const promo = validPromoCodes.find(p => p.code === promoCode.toUpperCase());
     if (promo) {
       setAppliedPromo(promo);
-      setPromoSuccess(`${promo.discountPercentage}% discount applied!`);
+      setPromoSuccess(`${promo.discountPercentage}% ${t.booking.review.discountApplied}`);
     } else {
-      setPromoError('Invalid promo code');
+      setPromoError(t.booking.review.invalidPromo);
       setAppliedPromo(null);
     }
   };
@@ -59,7 +62,7 @@ const BookingReviewPage: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    navigate('/book/payment');
+    navigate(localePath('/book/payment'));
   };
 
   return (
@@ -70,64 +73,64 @@ const BookingReviewPage: React.FC = () => {
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-2 text-primary-900">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-primary-900 bg-primary-900 text-white">1</div>
-              <span className="hidden md:inline text-sm font-medium">Select Dates</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.selectDates}</span>
             </div>
             <div className="w-12 h-0.5 bg-primary-900"></div>
             <div className="flex items-center gap-2 text-primary-900">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-primary-900 bg-primary-900 text-white">2</div>
-              <span className="hidden md:inline text-sm font-medium">Guest Info</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.guestInfo}</span>
             </div>
             <div className="w-12 h-0.5 bg-primary-900"></div>
             <div className="flex items-center gap-2 text-gold-600">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-gold-600 bg-gold-50">3</div>
-              <span className="hidden md:inline text-sm font-medium">Review</span>
+              <span className="hidden md:inline text-sm font-medium">{t.booking.steps.review}</span>
             </div>
           </div>
         </div>
 
-        <h1 className="text-4xl font-serif text-primary-900 mb-8">Review Your Booking</h1>
+        <h1 className="text-4xl font-serif text-primary-900 mb-8">{t.booking.review.title}</h1>
 
         <div className="bg-white p-8 shadow-sm mb-6">
-          <h2 className="text-2xl font-serif text-primary-900 mb-6">Booking Details</h2>
+          <h2 className="text-2xl font-serif text-primary-900 mb-6">{t.booking.review.bookingDetails}</h2>
 
           {/* Dates */}
           <div className="mb-6 pb-6 border-b border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-3">Tanggal Menginap</h3>
+            <h3 className="font-semibold text-primary-900 mb-3">{t.booking.review.stayDates}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-primary-700">
               <div>
-                <p className="text-sm text-primary-600">Check-in</p>
-                <p className="font-medium">{dateRange.checkIn.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm text-primary-600">{t.booking.review.checkIn}</p>
+                <p className="font-medium">{dateRange.checkIn.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
               <div>
-                <p className="text-sm text-primary-600">Check-out</p>
-                <p className="font-medium">{dateRange.checkOut.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm text-primary-600">{t.booking.review.checkOut}</p>
+                <p className="font-medium">{dateRange.checkOut.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
             </div>
-            <p className="mt-3 text-sm text-primary-600">{numberOfNights} malam</p>
+            <p className="mt-3 text-sm text-primary-600">{numberOfNights} {t.booking.review.nightLabel}</p>
           </div>
 
           {/* Guest Information */}
           <div className="mb-6 pb-6 border-b border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-3">Informasi Tamu</h3>
+            <h3 className="font-semibold text-primary-900 mb-3">{t.booking.review.guestInfoTitle}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-primary-600">Nama Lengkap</p>
+                <p className="text-primary-600">{t.booking.review.fullName}</p>
                 <p className="font-medium text-primary-900">{guest.fullName || '-'}</p>
               </div>
               <div>
-                <p className="text-primary-600">No. Handphone</p>
+                <p className="text-primary-600">{t.booking.review.phone}</p>
                 <p className="font-medium text-primary-900">{guest.phone || '-'}</p>
               </div>
               <div>
-                <p className="text-primary-600">Email</p>
+                <p className="text-primary-600">{t.booking.review.email}</p>
                 <p className="font-medium text-primary-900">{guest.email || '-'}</p>
               </div>
               <div>
-                <p className="text-primary-600">Jumlah Tamu</p>
-                <p className="font-medium text-primary-900">{guest.numberOfGuests || 1} orang</p>
+                <p className="text-primary-600">{t.booking.review.numberOfGuests}</p>
+                <p className="font-medium text-primary-900">{guest.numberOfGuests || 1} {t.booking.review.guestUnit}</p>
               </div>
               <div className="md:col-span-2">
-                <p className="text-primary-600">Alamat</p>
+                <p className="text-primary-600">{t.booking.review.address}</p>
                 <p className="font-medium text-primary-900">
                   {guest.address || '-'}
                   {(guest.city || guest.province) && (
@@ -136,19 +139,19 @@ const BookingReviewPage: React.FC = () => {
                 </p>
               </div>
               <div>
-                <p className="text-primary-600">Bed Tambahan</p>
+                <p className="text-primary-600">{t.booking.review.extraBed}</p>
                 <p className="font-medium text-primary-900">
-                  {guest.extraBed ? `${guest.extraBed} bed` : 'Tidak perlu'}
+                  {guest.extraBed ? `${guest.extraBed} ${t.booking.review.extraBedUnit}` : t.booking.review.extraBedNone}
                 </p>
               </div>
               <div>
-                <p className="text-primary-600">Estimasi Check-in</p>
+                <p className="text-primary-600">{t.booking.review.checkInTime}</p>
                 <p className="font-medium text-primary-900">{guest.checkInTime || '-'}</p>
               </div>
             </div>
             {guest.specialRequests && (
               <div className="mt-4">
-                <p className="text-sm text-primary-600">Permintaan Khusus</p>
+                <p className="text-sm text-primary-600">{t.booking.review.specialRequests}</p>
                 <p className="text-sm text-primary-900">{guest.specialRequests}</p>
               </div>
             )}
@@ -156,21 +159,21 @@ const BookingReviewPage: React.FC = () => {
 
           {/* Pricing */}
           <div>
-            <h3 className="font-semibold text-primary-900 mb-3">Rincian Harga</h3>
+            <h3 className="font-semibold text-primary-900 mb-3">{t.booking.review.pricingTitle}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-primary-700">
-                <span>Harga dasar ({numberOfNights} malam)</span>
+                <span>{t.booking.review.basePrice.replace('{nights}', String(numberOfNights))}</span>
                 <span>IDR {pricing.originalPrice.toLocaleString()}</span>
               </div>
               {appliedPromo && (
                 <div className="flex justify-between text-green-600">
-                  <span>Diskon ({appliedPromo.code} - {appliedPromo.discountPercentage}%)</span>
+                  <span>{t.booking.review.discount.replace('{code}', appliedPromo.code).replace('{percent}', String(appliedPromo.discountPercentage))}</span>
                   <span>- IDR {pricing.discountAmount.toLocaleString()}</span>
                 </div>
               )}
               <div className="pt-3 border-t border-primary-200">
                 <div className="flex justify-between font-semibold text-xl text-primary-900">
-                  <span>Total</span>
+                  <span>{t.booking.review.total}</span>
                   <span>IDR {pricing.finalPrice.toLocaleString()}</span>
                 </div>
               </div>
@@ -179,7 +182,7 @@ const BookingReviewPage: React.FC = () => {
 
           {/* Promo Code */}
           <div className="mt-6 pt-6 border-t border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-3">Promo Code</h3>
+            <h3 className="font-semibold text-primary-900 mb-3">{t.booking.review.promoCode}</h3>
             {!appliedPromo ? (
               <div>
                 <div className="flex gap-2 max-w-md">
@@ -187,7 +190,7 @@ const BookingReviewPage: React.FC = () => {
                     type="text"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    placeholder="Enter code"
+                    placeholder={t.booking.review.enterCode}
                     className="input-field flex-1 uppercase text-sm"
                   />
                   <button
@@ -195,7 +198,7 @@ const BookingReviewPage: React.FC = () => {
                     className="px-4 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors"
                     disabled={!promoCode}
                   >
-                    Apply
+                    {t.booking.review.apply}
                   </button>
                 </div>
                 {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}
@@ -206,9 +209,9 @@ const BookingReviewPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-green-900">{appliedPromo.code}</p>
-                    <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% discount</p>
+                    <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% {t.booking.review.discount.split('(')[0].trim().toLowerCase()}</p>
                   </div>
-                  <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">Remove</button>
+                  <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">{t.booking.review.remove}</button>
                 </div>
               </div>
             )}
@@ -218,16 +221,16 @@ const BookingReviewPage: React.FC = () => {
         {/* Actions */}
         <div className="flex gap-4">
           <button
-            onClick={() => navigate('/book/form')}
+            onClick={() => navigate(localePath('/book/form'))}
             className="btn-secondary"
           >
-            Edit Booking
+            {t.booking.review.editBooking}
           </button>
           <button
             onClick={handleConfirm}
             className="btn-primary flex-1"
           >
-            Confirm & Continue to Payment
+            {t.booking.review.confirmPayment}
           </button>
         </div>
       </div>

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import heroImage from '../assets/images/hero.png';
+import { useTranslation } from '../i18n/LanguageContext';
 
 const VillaPage: React.FC = () => {
+  const { t, localePath } = useTranslation();
+
   return (
     <div>
       {/* Hero Section with Villa Image */}
@@ -17,8 +20,8 @@ const VillaPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-primary-900/40 via-primary-900/50 to-primary-900/60"></div>
 
         <div className="relative z-10 text-center text-white px-6">
-          <h1 className="text-5xl md:text-6xl font-serif mb-4">The Villa</h1>
-          <p className="text-xl md:text-2xl font-light">Japanese Architecture & Mountain Views</p>
+          <h1 className="text-5xl md:text-6xl font-serif mb-4">{t.villa.heroTitle}</h1>
+          <p className="text-xl md:text-2xl font-light">{t.villa.heroSubtitle}</p>
         </div>
       </section>
 
@@ -26,27 +29,24 @@ const VillaPage: React.FC = () => {
       <section className="section-padding bg-white">
         <div className="container-custom max-w-4xl">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-serif text-primary-900 mb-6">Japanese Villa Sekipan</h2>
+            <h2 className="text-4xl font-serif text-primary-900 mb-6">{t.villa.overviewTitle}</h2>
             <p className="text-lg text-primary-700 leading-relaxed">
-              A masterpiece of Japanese architectural design, Villa Sekipan harmonizes traditional
-              aesthetics with modern comfort. This single-floor villa features clean lines, natural materials,
-              and an emphasis on indoor-outdoor living. Perched in a serene mountain setting, experience
-              breathtaking views from our exclusive rooftop viewing deck while enjoying complete privacy.
+              {t.villa.overviewText}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="text-center p-6 border border-primary-200">
               <div className="text-4xl font-serif text-gold-600 mb-2">4</div>
-              <p className="text-sm uppercase tracking-wider text-primary-700">Bedrooms</p>
+              <p className="text-sm uppercase tracking-wider text-primary-700">{t.villa.bedrooms}</p>
             </div>
             <div className="text-center p-6 border border-primary-200">
               <div className="text-4xl font-serif text-gold-600 mb-2">3</div>
-              <p className="text-sm uppercase tracking-wider text-primary-700">Bathrooms</p>
+              <p className="text-sm uppercase tracking-wider text-primary-700">{t.villa.bathrooms}</p>
             </div>
             <div className="text-center p-6 border border-primary-200">
               <div className="text-4xl font-serif text-gold-600 mb-2">10</div>
-              <p className="text-sm uppercase tracking-wider text-primary-700">Max Guests</p>
+              <p className="text-sm uppercase tracking-wider text-primary-700">{t.villa.maxGuests}</p>
             </div>
           </div>
         </div>
@@ -55,7 +55,7 @@ const VillaPage: React.FC = () => {
       {/* Features */}
       <section className="section-padding bg-primary-50">
         <div className="container-custom">
-          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">Premium Features</h2>
+          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">{t.villa.featuresTitle}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <div className="flex gap-4">
@@ -67,10 +67,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Rooftop Viewing Deck</h3>
-                <p className="text-primary-700">
-                  Exclusive rooftop terrace offering 360-degree panoramic mountain views, perfect for sunrise meditation or stargazing.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.rooftopTitle}</h3>
+                <p className="text-primary-700">{t.villa.rooftopText}</p>
               </div>
             </div>
 
@@ -83,10 +81,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Swimming Pool</h3>
-                <p className="text-primary-700">
-                  Serene swimming pool surrounded by natural landscaping, designed for relaxation and contemplation.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.poolTitle}</h3>
+                <p className="text-primary-700">{t.villa.poolText}</p>
               </div>
             </div>
 
@@ -99,10 +95,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">BBQ & Outdoor Dining</h3>
-                <p className="text-primary-700">
-                  Dedicated BBQ area with outdoor dining space, perfect for al fresco meals under the mountain sky.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.bbqTitle}</h3>
+                <p className="text-primary-700">{t.villa.bbqText}</p>
               </div>
             </div>
 
@@ -115,10 +109,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Indoor Communal Space</h3>
-                <p className="text-primary-700">
-                  Spacious open-plan living area designed in Japanese minimalist style, connecting seamlessly with outdoor spaces.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.communalTitle}</h3>
+                <p className="text-primary-700">{t.villa.communalText}</p>
               </div>
             </div>
 
@@ -131,10 +123,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Energy Efficient Design</h3>
-                <p className="text-primary-700">
-                  Weatherproof construction with energy-efficient systems that harmonize with nature while minimizing environmental impact.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.energyTitle}</h3>
+                <p className="text-primary-700">{t.villa.energyText}</p>
               </div>
             </div>
 
@@ -147,10 +137,8 @@ const VillaPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-serif mb-2 text-primary-900">Modern Amenities</h3>
-                <p className="text-primary-700">
-                  High-speed WiFi, smart climate control, entertainment systems, and parking for up to 5 vehicles.
-                </p>
+                <h3 className="text-xl font-serif mb-2 text-primary-900">{t.villa.modernTitle}</h3>
+                <p className="text-primary-700">{t.villa.modernText}</p>
               </div>
             </div>
           </div>
@@ -160,42 +148,32 @@ const VillaPage: React.FC = () => {
       {/* Bedrooms */}
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">Four Beautiful Bedrooms</h2>
+          <h2 className="text-4xl font-serif text-center mb-16 text-primary-900">{t.villa.bedroomsTitle}</h2>
 
           <div className="max-w-4xl mx-auto text-center mb-12">
             <p className="text-lg text-primary-700 leading-relaxed">
-              Each of our four bedrooms is thoughtfully designed with Japanese minimalist aesthetics,
-              featuring natural materials, clean lines, and serene atmospheres. With three well-appointed
-              bathrooms throughout the villa, comfort and privacy are ensured for all guests.
+              {t.villa.bedroomsIntro}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <div className="border border-primary-200 p-6">
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Master Bedroom</h3>
-              <p className="text-primary-700 mb-4">
-                Spacious master bedroom with premium bedding, en-suite bathroom, and direct access
-                to mountain views through large windows that invite natural light.
-              </p>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">{t.villa.masterTitle}</h3>
+              <p className="text-primary-700 mb-4">{t.villa.masterText}</p>
               <div className="text-sm text-primary-600">
-                <p>• King/Queen Bed</p>
-                <p>• En-suite Bathroom</p>
-                <p>• Mountain Views</p>
-                <p>• Natural Light</p>
+                {t.villa.masterFeatures.map((feature, i) => (
+                  <p key={i}>• {feature}</p>
+                ))}
               </div>
             </div>
 
             <div className="border border-primary-200 p-6">
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">Guest Bedrooms</h3>
-              <p className="text-primary-700 mb-4">
-                Three additional bedrooms with comfortable beds, elegant Japanese-inspired decor,
-                and shared access to two additional bathrooms.
-              </p>
+              <h3 className="text-2xl font-serif mb-3 text-primary-900">{t.villa.guestTitle}</h3>
+              <p className="text-primary-700 mb-4">{t.villa.guestText}</p>
               <div className="text-sm text-primary-600">
-                <p>• Queen/Twin Beds</p>
-                <p>• Shared Bathrooms</p>
-                <p>• Air Conditioning</p>
-                <p>• Natural Elements</p>
+                {t.villa.guestFeatures.map((feature, i) => (
+                  <p key={i}>• {feature}</p>
+                ))}
               </div>
             </div>
           </div>
@@ -205,24 +183,22 @@ const VillaPage: React.FC = () => {
       {/* Location */}
       <section className="section-padding bg-primary-50">
         <div className="container-custom max-w-4xl text-center">
-          <h2 className="text-4xl font-serif mb-6 text-primary-900">Serene Mountain Setting</h2>
+          <h2 className="text-4xl font-serif mb-6 text-primary-900">{t.villa.locationTitle}</h2>
           <p className="text-lg text-primary-700 leading-relaxed mb-8">
-            Perched in a peaceful mountain location, Villa Sekipan offers the perfect retreat from
-            the bustle of daily life. Surrounded by nature yet accessible to local attractions,
-            experience breathtaking views and tranquil atmosphere that embody Japanese harmony with nature.
+            {t.villa.locationText}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Mountain Views</p>
-              <p className="text-primary-600">360° panoramic vistas</p>
+              <p className="font-semibold text-primary-900 mb-1">{t.villa.mountainViews}</p>
+              <p className="text-primary-600">{t.villa.mountainViewsSub}</p>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Natural Setting</p>
-              <p className="text-primary-600">Private & peaceful</p>
+              <p className="font-semibold text-primary-900 mb-1">{t.villa.naturalSetting}</p>
+              <p className="text-primary-600">{t.villa.naturalSettingSub}</p>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 mb-1">Local Access</p>
-              <p className="text-primary-600">Nearby attractions</p>
+              <p className="font-semibold text-primary-900 mb-1">{t.villa.localAccess}</p>
+              <p className="text-primary-600">{t.villa.localAccessSub}</p>
             </div>
           </div>
         </div>
@@ -231,12 +207,10 @@ const VillaPage: React.FC = () => {
       {/* CTA */}
       <section className="section-padding bg-primary-900 text-white text-center">
         <div className="container-custom max-w-3xl">
-          <h2 className="text-4xl font-serif mb-6">Ready to Book Your Stay?</h2>
-          <p className="text-xl mb-8 text-primary-200">
-            Experience the ultimate luxury at Villa Sekipan. Check availability and reserve your dates today.
-          </p>
-          <Link to="/book" className="btn-gold inline-block">
-            Check Availability
+          <h2 className="text-4xl font-serif mb-6">{t.villa.ctaTitle}</h2>
+          <p className="text-xl mb-8 text-primary-200">{t.villa.ctaText}</p>
+          <Link to={localePath('/book')} className="btn-gold inline-block">
+            {t.villa.ctaButton}
           </Link>
         </div>
       </section>
