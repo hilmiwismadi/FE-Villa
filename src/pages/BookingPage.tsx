@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays, format, eachDayOfInterval, isSameDay } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import Calendar from '../components/Calendar';
 import type { GuestInfo } from '../types';
@@ -19,7 +19,7 @@ const BookingPage: React.FC = () => {
     setPricing,
   } = useBooking();
 
-  const [step, setStep] = useState<'dates' | 'promo' | 'info'>('dates');
+  const [step, setStep] = useState<'dates' | 'info'>('dates');
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
   const [selectedDatesList, setSelectedDatesList] = useState<Date[]>([]);
@@ -31,10 +31,14 @@ const BookingPage: React.FC = () => {
   // Guest form state
   const [formData, setFormData] = useState<GuestInfo>({
     fullName: '',
-    email: '',
     phone: '',
-    idNumber: '',
+    email: '',
+    address: '',
+    city: '',
+    province: '',
     numberOfGuests: 1,
+    extraBed: 0,
+    checkInTime: '',
     specialRequests: '',
   });
 
@@ -76,7 +80,50 @@ const BookingPage: React.FC = () => {
   }, [numberOfNights, appliedPromo]);
 
   const handleDateToggle = (dates: Date[]) => {
-    setSelectedDatesList(dates);
+    if (dates.length === 0) {
+      setSelectedDatesList([]);
+      return;
+    }
+
+    const wasRemoved = dates.length < selectedDatesList.length;
+
+    if (wasRemoved) {
+      // User deselected a date — find which one was removed
+      const removed = selectedDatesList.find(
+        sd => !dates.some(d => isSameDay(d, sd))
+      );
+
+      if (!removed) {
+        setSelectedDatesList(dates);
+        return;
+      }
+
+      const sorted = [...selectedDatesList].sort((a, b) => a.getTime() - b.getTime());
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+
+      if (isSameDay(removed, first)) {
+        // Removed from start — shrink from left
+        const newDates = sorted.filter(d => d > removed);
+        setSelectedDatesList(newDates);
+      } else if (isSameDay(removed, last)) {
+        // Removed from end — shrink from right
+        const newDates = sorted.filter(d => d < removed);
+        setSelectedDatesList(newDates);
+      } else {
+        // Removed from middle — keep only dates up to the removed one (trim right side)
+        const newDates = sorted.filter(d => d < removed);
+        setSelectedDatesList(newDates);
+      }
+    } else {
+      // User added a date — auto-fill the entire range
+      const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+
+      const fullRange = eachDayOfInterval({ start: first, end: last });
+      setSelectedDatesList(fullRange);
+    }
   };
 
   const handleApplyPromo = () => {
@@ -107,7 +154,7 @@ const BookingPage: React.FC = () => {
     setPromoError('');
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -125,7 +172,7 @@ const BookingPage: React.FC = () => {
 
   const handleBookViaWebsite = () => {
     setShowBookingMethodModal(false);
-    setStep('promo');
+    setStep('info');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -138,11 +185,9 @@ const BookingPage: React.FC = () => {
       }
       setShowBookingMethodModal(true);
       return;
-    } else if (step === 'promo') {
-      setStep('info');
     } else if (step === 'info') {
       // Validate form
-      if (!formData.fullName || !formData.email || !formData.phone || !formData.idNumber) {
+      if (!formData.fullName || !formData.phone) {
         alert('Please fill in all required fields');
         return;
       }
@@ -165,8 +210,8 @@ const BookingPage: React.FC = () => {
         {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-center gap-4">
-            <div className={`flex items-center gap-2 ${step === 'dates' ? 'text-gold-600' : step === 'promo' || step === 'info' ? 'text-primary-900' : 'text-primary-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === 'dates' ? 'border-gold-600 bg-gold-50' : step === 'promo' || step === 'info' ? 'border-primary-900 bg-primary-900 text-white' : 'border-primary-300'}`}>
+            <div className={`flex items-center gap-2 ${step === 'dates' ? 'text-gold-600' : 'text-primary-900'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === 'dates' ? 'border-gold-600 bg-gold-50' : 'border-primary-900 bg-primary-900 text-white'}`}>
                 1
               </div>
               <span className="hidden md:inline text-sm font-medium">Select Dates</span>
@@ -174,18 +219,9 @@ const BookingPage: React.FC = () => {
 
             <div className="w-12 h-0.5 bg-primary-300"></div>
 
-            <div className={`flex items-center gap-2 ${step === 'promo' ? 'text-gold-600' : step === 'info' ? 'text-primary-900' : 'text-primary-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === 'promo' ? 'border-gold-600 bg-gold-50' : step === 'info' ? 'border-primary-900 bg-primary-900 text-white' : 'border-primary-300'}`}>
-                2
-              </div>
-              <span className="hidden md:inline text-sm font-medium">Promo Code</span>
-            </div>
-
-            <div className="w-12 h-0.5 bg-primary-300"></div>
-
             <div className={`flex items-center gap-2 ${step === 'info' ? 'text-gold-600' : 'text-primary-400'}`}>
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === 'info' ? 'border-gold-600 bg-gold-50' : 'border-primary-300'}`}>
-                3
+                2
               </div>
               <span className="hidden md:inline text-sm font-medium">Guest Info</span>
             </div>
@@ -198,7 +234,6 @@ const BookingPage: React.FC = () => {
             <div className="bg-white p-8 shadow-sm">
               <h2 className="text-3xl font-serif text-primary-900 mb-6">
                 {step === 'dates' && 'Select Your Dates'}
-                {step === 'promo' && 'Apply Promo Code (Optional)'}
                 {step === 'info' && 'Guest Information'}
               </h2>
 
@@ -235,67 +270,13 @@ const BookingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 2: Promo Code */}
-              {step === 'promo' && (
-                <div>
-                  <p className="text-primary-700 mb-6">
-                    Have a promo code? Enter it below to get a discount on your booking.
-                  </p>
-
-                  {!appliedPromo ? (
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        placeholder="Enter promo code"
-                        className="input-field flex-1 uppercase"
-                      />
-                      <button
-                        onClick={handleApplyPromo}
-                        className="btn-primary"
-                        disabled={!promoCode}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200">
-                      <div>
-                        <p className="font-medium text-green-900">Code: {appliedPromo.code}</p>
-                        <p className="text-sm text-green-700">{appliedPromo.discountPercentage}% discount applied</p>
-                      </div>
-                      <button
-                        onClick={handleRemovePromo}
-                        className="text-red-600 hover:text-red-800 text-sm underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-
-                  {promoError && (
-                    <p className="mt-3 text-sm text-red-600">{promoError}</p>
-                  )}
-                  {promoSuccess && (
-                    <p className="mt-3 text-sm text-green-600">{promoSuccess}</p>
-                  )}
-
-                  <button
-                    onClick={() => setStep('info')}
-                    className="btn-secondary mt-6"
-                  >
-                    Skip
-                  </button>
-                </div>
-              )}
-
-              {/* Step 3: Guest Information */}
+              {/* Step 2: Guest Information */}
               {step === 'info' && (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Nama */}
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Full Name *
+                      Nama Lengkap *
                     </label>
                     <input
                       type="text"
@@ -303,28 +284,16 @@ const BookingPage: React.FC = () => {
                       value={formData.fullName}
                       onChange={handleFormChange}
                       className="input-field"
+                      placeholder="Masukkan nama lengkap"
                       required
                     />
                   </div>
 
+                  {/* No HP & Email */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-primary-900 mb-2">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleFormChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-primary-900 mb-2">
-                        Phone Number *
+                        No. Handphone *
                       </label>
                       <input
                         type="tel"
@@ -332,29 +301,80 @@ const BookingPage: React.FC = () => {
                         value={formData.phone}
                         onChange={handleFormChange}
                         className="input-field"
+                        placeholder="08xxxxxxxxxx"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-primary-900 mb-2">
+                        Email <span className="text-primary-400 font-normal">(Opsional)</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleFormChange}
+                        className="input-field"
+                        placeholder="email@contoh.com"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Alamat */}
+                  <div>
+                    <label className="block text-sm font-medium text-primary-900 mb-2">
+                      Alamat *
+                    </label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleFormChange}
+                      rows={3}
+                      className="input-field resize-none"
+                      placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan"
+                      required
+                    ></textarea>
+                  </div>
+
+                  {/* Kota & Provinsi */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-primary-900 mb-2">
+                        Kota / Kabupaten *
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleFormChange}
+                        className="input-field"
+                        placeholder="Contoh: Jakarta Selatan"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-primary-900 mb-2">
+                        Provinsi *
+                      </label>
+                      <input
+                        type="text"
+                        name="province"
+                        value={formData.province}
+                        onChange={handleFormChange}
+                        className="input-field"
+                        placeholder="Contoh: DKI Jakarta"
                         required
                       />
                     </div>
                   </div>
 
+                  {/* Jumlah Orang & Extra Bed */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-primary-900 mb-2">
-                        ID Number / Passport *
-                      </label>
-                      <input
-                        type="text"
-                        name="idNumber"
-                        value={formData.idNumber}
-                        onChange={handleFormChange}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-primary-900 mb-2">
-                        Number of Guests *
+                        Jumlah Tamu *
                       </label>
                       <input
                         type="number"
@@ -367,19 +387,61 @@ const BookingPage: React.FC = () => {
                         required
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-primary-900 mb-2">
+                        Bed Tambahan
+                      </label>
+                      <select
+                        name="extraBed"
+                        value={formData.extraBed}
+                        onChange={handleFormChange}
+                        className="input-field"
+                      >
+                        <option value={0}>Tidak perlu</option>
+                        <option value={1}>1 bed tambahan</option>
+                        <option value={2}>2 bed tambahan</option>
+                        <option value={3}>3 bed tambahan</option>
+                      </select>
+                    </div>
                   </div>
 
+                  {/* Estimasi Check-in */}
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
-                      Special Requests (Optional)
+                      Estimasi Waktu Check-in *
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {['14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00', '20:00 - 22:00'].map((time) => (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, checkInTime: time }))}
+                          className={`p-3 text-sm border-2 rounded transition-all text-center
+                            ${formData.checkInTime === time
+                              ? 'border-gold-600 bg-gold-50 text-primary-900 font-medium'
+                              : 'border-primary-200 text-primary-700 hover:border-primary-400'
+                            }
+                          `}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Special Requests */}
+                  <div>
+                    <label className="block text-sm font-medium text-primary-900 mb-2">
+                      Permintaan Khusus <span className="text-primary-400 font-normal">(Opsional)</span>
                     </label>
                     <textarea
                       name="specialRequests"
                       value={formData.specialRequests}
                       onChange={handleFormChange}
-                      rows={4}
+                      rows={3}
                       className="input-field resize-none"
-                      placeholder="Any special requirements or requests..."
+                      placeholder="Ada permintaan atau kebutuhan khusus?"
                     ></textarea>
                   </div>
                 </form>
@@ -390,10 +452,7 @@ const BookingPage: React.FC = () => {
             <div className="flex gap-4 mt-6">
               {step !== 'dates' && (
                 <button
-                  onClick={() => {
-                    if (step === 'info') setStep('promo');
-                    else if (step === 'promo') setStep('dates');
-                  }}
+                  onClick={() => setStep('dates')}
                   className="btn-secondary"
                 >
                   Back
@@ -442,12 +501,51 @@ const BookingPage: React.FC = () => {
                 )}
               </div>
 
-              {appliedPromo && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 text-sm">
-                  <p className="font-medium text-green-900">🎉 Promo Applied</p>
-                  <p className="text-green-700">{appliedPromo.code} - {appliedPromo.discountPercentage}% off</p>
-                </div>
-              )}
+              {/* Promo Code Section */}
+              <div className="mt-6 pt-4 border-t border-primary-200">
+                <p className="text-sm font-medium text-primary-900 mb-3">Promo Code</p>
+                {!appliedPromo ? (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        placeholder="Enter code"
+                        className="input-field flex-1 uppercase text-sm"
+                      />
+                      <button
+                        onClick={handleApplyPromo}
+                        className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors"
+                        disabled={!promoCode}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {promoError && (
+                      <p className="mt-2 text-xs text-red-600">{promoError}</p>
+                    )}
+                    {promoSuccess && (
+                      <p className="mt-2 text-xs text-green-600">{promoSuccess}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-green-50 border border-green-200 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-green-900">{appliedPromo.code}</p>
+                        <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% discount</p>
+                      </div>
+                      <button
+                        onClick={handleRemovePromo}
+                        className="text-red-600 hover:text-red-800 text-xs underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

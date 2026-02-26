@@ -11,7 +11,7 @@ const PaymentPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!dateRange.checkIn || !dateRange.checkOut || !guestInfo) {
-    navigate('/book');
+    navigate('/book/calendar');
     return null;
   }
 
@@ -54,7 +54,7 @@ const PaymentPage: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Navigate to confirmation page with booking ID
-      navigate(`/confirmation/${bookingReference}`);
+      navigate(`/book/confirmation/${bookingReference}`);
     } catch (error) {
       console.error('Error submitting booking:', error);
       alert('An error occurred. Please try again.');
@@ -217,7 +217,7 @@ const PaymentPage: React.FC = () => {
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => navigate('/review')}
+                onClick={() => navigate('/book/review')}
                 className="btn-secondary"
                 disabled={isSubmitting}
               >

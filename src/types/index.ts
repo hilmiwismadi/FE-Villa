@@ -37,11 +37,16 @@ export interface GuestInfo {
   fullName?: string;
   firstName?: string;
   lastName?: string;
-  email: string;
+  email?: string;
   phone: string;
   idNumber?: string;
   numberOfGuests?: number;
   specialRequests?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  extraBed?: number;
+  checkInTime?: string;
 }
 
 export interface BookingSummary {

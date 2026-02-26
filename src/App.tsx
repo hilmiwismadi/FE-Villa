@@ -1,9 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BookingProvider } from './contexts/BookingContext';
 import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
 import VillaPage from './pages/VillaPage';
-import BookingPage from './pages/BookingPage';
+import BookingCalendarPage from './pages/BookingCalendarPage';
+import BookingFormPage from './pages/BookingFormPage';
 import BookingReviewPage from './pages/BookingReviewPage';
 import PaymentPage from './pages/PaymentPage';
 import ConfirmationPage from './pages/ConfirmationPage';
@@ -18,10 +19,12 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
             <Route path="villa" element={<VillaPage />} />
-            <Route path="book" element={<BookingPage />} />
-            <Route path="review" element={<BookingReviewPage />} />
-            <Route path="payment" element={<PaymentPage />} />
-            <Route path="confirmation/:bookingId" element={<ConfirmationPage />} />
+            <Route path="book" element={<Navigate to="/book/calendar" replace />} />
+            <Route path="book/calendar" element={<BookingCalendarPage />} />
+            <Route path="book/form" element={<BookingFormPage />} />
+            <Route path="book/review" element={<BookingReviewPage />} />
+            <Route path="book/payment" element={<PaymentPage />} />
+            <Route path="book/confirmation/:bookingId" element={<ConfirmationPage />} />
             <Route path="owner" element={<OwnerDashboardPage />} />
             <Route path="affiliate" element={<AffiliatorDashboardPage />} />
           </Route>
