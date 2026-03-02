@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
+import { createOrder, type OrderResponse } from '../services/orderService';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,19 +25,28 @@ const BookingFormPage: React.FC = () => {
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
 
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
 
-  // Redirect if no dates selected
-  if (selectedDates.length < 2 || !derivedCheckIn || !derivedCheckOut) {
-    navigate(localePath('/book/calendar'));
-    return null;
-  }
+  // Redirect if no dates selected (must use useEffect to avoid warning)
+  useEffect(() => {
+    if (selectedDates.length < 2 || !derivedCheckIn || !derivedCheckOut) {
+      navigate(localePath('/book/calendar'));
+    }
+  }, [selectedDates.length, derivedCheckIn?.getTime(), derivedCheckOut?.getTime()]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    // Convert numeric fields to numbers
+    if (name === 'numberOfGuests' || name === 'extraBed') {
+      setFormData({ ...formData, [name]: Number(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   // Auto-validate promo when phone is entered and dates are selected
@@ -97,14 +107,75 @@ const BookingFormPage: React.FC = () => {
     setPromoError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phone) {
+
+    // Validation
+    if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.province) {
       alert(t.booking.form.fillRequired);
       return;
     }
-    setGuestInfo(formData);
-    navigate(localePath('/book/review'));
+
+    if (!derivedCheckIn || !derivedCheckOut) {
+      alert('Dates are required');
+      return;
+    }
+
+    if (!formData.checkInTime) {
+      alert('Please select check-in time');
+      return;
+    }
+
+    setCreatingOrder(true);
+    setOrderError('');
+
+    try {
+      // Map check-in time to API format
+      const timeMap: Record<string, '14-16' | '16-18' | '18-20' | '20-22'> = {
+        '14:00 - 16:00': '14-16',
+        '16:00 - 18:00': '16-18',
+        '18:00 - 20:00': '18-20',
+        '20:00 - 22:00': '20-22',
+      };
+
+      const estimatedCheckIn = timeMap[formData.checkInTime] || '14-16';
+
+      const orderData = {
+        guestName: formData.fullName,
+        guestPhone: formData.phone,
+        guestAddress: `${formData.address}, ${formData.city}, ${formData.province}`,
+        guestCount: Number(formData.numberOfGuests) || 1,
+        extraBeds: typeof formData.extraBed === 'number' ? formData.extraBed : Number(formData.extraBed || 0),
+        estimatedCheckIn,
+        checkInDate: format(derivedCheckIn, 'yyyy-MM-dd'),
+        checkOutDate: format(derivedCheckOut, 'yyyy-MM-dd'),
+        promoCode: appliedPromo ? appliedPromo.code : undefined,
+      };
+
+      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+      console.log('extraBeds value:', orderData.extraBeds, 'type:', typeof orderData.extraBeds);
+      console.log('guestCount value:', orderData.guestCount, 'type:', typeof orderData.guestCount);
+
+      const response: OrderResponse = await createOrder(orderData);
+
+      // Store order ID in context for payment page
+      setGuestInfo({
+        ...formData,
+        orderId: response.orderId,
+        totalAmount: response.totalAmount,
+        paymentDeadline: response.paymentDeadline,
+      });
+
+      navigate(localePath('/book/review'));
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setOrderError(error.message || 'Failed to create order');
+      } else {
+        setOrderError('Failed to create order. Please try again.');
+      }
+    } finally {
+      setCreatingOrder(false);
+    }
   };
 
   const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
@@ -315,16 +386,25 @@ const BookingFormPage: React.FC = () => {
               <button
                 onClick={() => navigate(localePath('/book/calendar'))}
                 className="btn-secondary"
+                disabled={creatingOrder}
               >
                 {t.booking.form.back}
               </button>
               <button
                 onClick={handleSubmit}
+                disabled={creatingOrder}
                 className="btn-primary flex-1"
               >
-                {t.booking.form.reviewBooking}
+                {creatingOrder ? 'Creating order...' : t.booking.form.reviewBooking}
               </button>
             </div>
+
+            {/* Order Error */}
+            {orderError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-800">{orderError}</p>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}

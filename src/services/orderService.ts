@@ -121,6 +121,7 @@ async function apiRequest<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      console.error('API Error Response:', errorData);
       throw new ApiError(
         errorData?.message || `HTTP ${response.status}: ${response.statusText}`,
         response.status,

@@ -10,10 +10,12 @@ interface CalendarProps {
   selectedDatesList?: Date[];
   /** Called when a date is toggled in multiSelect mode */
   onDateToggle?: (dates: Date[]) => void;
+  /** Called when a date is clicked in multiSelect mode - passes the raw clicked date for parent to handle logic */
+  onDateClickInMultiSelect?: (date: Date) => void;
   bookedDates?: Date[];
   blockedDates?: Date[];
   readOnly?: boolean;
-  /** Enable click-to-toggle individual dates mode */
+  /** Enable click-to-toggle{ individual dates mode */
   multiSelect?: boolean;
   /** Initial month (YYYY-MM string) - used to sync calendar state with parent */
   defaultMonth?: string;
@@ -28,6 +30,7 @@ const Calendar: React.FC<CalendarProps> = ({
   selectedDates = { checkIn: null, checkOut: null },
   selectedDatesList = [],
   onDateToggle,
+  onDateClickInMultiSelect,
   bookedDates = [],
   blockedDates = [],
   readOnly = false,
@@ -115,7 +118,12 @@ const Calendar: React.FC<CalendarProps> = ({
       return;
     }
 
-    if (multiSelect && onDateToggle) {
+    if (multiSelect && onDateClickInMultiSelect) {
+      onDateClickInMultiSelect(date);
+      return;
+    }
+
+    if (onDateToggle) {
       const dateStr = format(date, 'yyyy-MM-dd');
       const exists = selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
       if (exists) {

@@ -3,7 +3,7 @@
  * Base URL: http://localhost:4002 (dev) | http://<VPS_IP>:9999 (prod)
  */
 
-const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://villa-order.izcy.tech';
+const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://villa-promo.izcy.tech';
 
 // Common types
 export interface ValidatePromoRequest {

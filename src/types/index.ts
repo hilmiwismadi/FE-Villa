@@ -46,13 +46,17 @@ export interface GuestInfo {
   email?: string;
   phone: string;
   idNumber?: string;
-  numberOfGuests?: number;
+  numberOfGuests?: number | string;
   specialRequests?: string;
   address?: string;
   city?: string;
   province?: string;
-  extraBed?: number;
+  extraBed?: number | string; // string from select, converted to number for API
   checkInTime?: string;
+  // Fields from Order API response
+  orderId?: string;
+  totalAmount?: number;
+  paymentDeadline?: string | null;
 }
 
 export interface BookingSummary {
