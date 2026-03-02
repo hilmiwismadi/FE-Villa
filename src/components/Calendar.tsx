@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths, parse } from 'date-fns';
 import { useTranslation } from '../i18n/LanguageContext';
+import type { CalendarDay } from '../types';
 
 interface CalendarProps {
   onDateSelect?: (date: Date) => void;
@@ -14,31 +15,69 @@ interface CalendarProps {
   readOnly?: boolean;
   /** Enable click-to-toggle individual dates mode */
   multiSelect?: boolean;
+  /** Initial month (YYYY-MM string) - used to sync calendar state with parent */
+  defaultMonth?: string;
+  /** Calendar data from API (optional - if provided, backend data is used) */
+  calendarData?: CalendarDay[];
+  /** Callback when month changes (for API fetching) */
+  onMonthChange?: (month: string) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { checkIn: null, checkOut: null }, selectedDatesList = [], onDateToggle, bookedDates = [], blockedDates = [], readOnly = false, multiSelect = false }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+const Calendar: React.FC<CalendarProps> = ({
+  onDateSelect,
+  selectedDates = { checkIn: null, checkOut: null },
+  selectedDatesList = [],
+  onDateToggle,
+  bookedDates = [],
+  blockedDates = [],
+  readOnly = false,
+  multiSelect = false,
+  defaultMonth,
+  calendarData,
+  onMonthChange
+}) => {
+  const [currentMonth, setCurrentMonth] = useState(defaultMonth ? parse(defaultMonth, 'yyyy-MM', new Date()) : new Date());
   const today = startOfToday();
   const { t, dateFnsLocale } = useTranslation();
+
+
+  // Map calendar data to unavailable dates
+  const getBookedDatesFromAPI = (): Date[] => {
+    if (!calendarData) return [];
+    return calendarData
+      .filter(day => day.status === 'booked' || day.status === 'in_transaction')
+      .map(day => parse(day.date, 'yyyy-MM-dd', new Date()));
+  };
+
+  const getBlockedDatesFromAPI = (): Date[] => {
+    if (!calendarData) return [];
+    return calendarData
+      .filter(day => day.status === 'blocked')
+      .map(day => parse(day.date, 'yyyy-MM-dd', new Date()));
+  };
+
+  // Combine API data with props data
+  const effectiveBookedDates = [...bookedDates, ...getBookedDatesFromAPI()];
+  const effectiveBlockedDates = [...blockedDates, ...getBlockedDatesFromAPI()];
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Get the day of week for the first day (0 = Sunday, 6 = Saturday)
+  // Get day of week for first day (0 = Sunday, 6 = Saturday)
   const firstDayOfWeek = monthStart.getDay();
 
-  // Fill in empty days at the start of the month
+  // Fill in empty days at start of month
   const emptyDays = Array(firstDayOfWeek).fill(null);
 
   const isDateBooked = (date: Date) => {
-    return bookedDates.some(bookedDate =>
+    return effectiveBookedDates.some(bookedDate =>
       format(bookedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
   };
 
   const isDateBlocked = (date: Date) => {
-    return blockedDates.some(blockedDate =>
+    return effectiveBlockedDates.some(blockedDate =>
       format(blockedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
   };
@@ -90,8 +129,21 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
     if (onDateSelect) onDateSelect(date);
   };
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const nextMonth = () => {
+    const newMonth = addMonths(currentMonth, 1);
+    setCurrentMonth(newMonth);
+    if (onMonthChange) {
+      onMonthChange(format(newMonth, 'yyyy-MM'));
+    }
+  };
+
+  const prevMonth = () => {
+    const newMonth = subMonths(currentMonth, 1);
+    setCurrentMonth(newMonth);
+    if (onMonthChange) {
+      onMonthChange(format(newMonth, 'yyyy-MM'));
+    }
+  };
 
   return (
     <div className="bg-white border border-primary-200 p-6">
@@ -117,7 +169,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
           aria-label={t.calendar.nextMonth}
         >
           <svg className="w-5 h-5 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7" />
           </svg>
         </button>
       </div>
@@ -138,7 +190,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
           <div key={`empty-${index}`} className="aspect-square"></div>
         ))}
 
-        {/* Days of the month */}
+        {/* Days of month */}
         {daysInMonth.map(date => {
           const isPast = isBefore(date, today) && !isToday(date);
           const booked = isDateBooked(date);
@@ -147,18 +199,28 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
           const inRange = isDateInRange(date);
           const disabled = isPast || booked || blocked;
 
+          // Get price from API data
+          const dateStr = format(date, 'yyyy-MM-dd');
+          const dayData = calendarData?.find(d => d.date === dateStr);
+          const price = dayData?.price;
+
           if (readOnly) {
             return (
               <div
                 key={date.toString()}
                 className={`
-                  aspect-square flex items-center justify-center text-sm rounded transition-all
+                  aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                   ${disabled ? 'text-primary-300' : 'text-primary-900'}
                   ${isToday(date) ? 'border-2 border-gold-600' : ''}
                   ${booked || blocked ? 'bg-red-50 line-through' : ''}
                 `}
               >
-                {format(date, 'd')}
+                <span>{format(date, 'd')}</span>
+                {price && !disabled && (
+                  <span className="text-xs text-primary-500 mt-1">
+                    {(price / 1000000).toFixed(1)}jt
+                  </span>
+                )}
               </div>
             );
           }
@@ -169,7 +231,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
               onClick={() => handleDateClick(date)}
               disabled={disabled}
               className={`
-                aspect-square flex items-center justify-center text-sm rounded transition-all
+                aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                 ${disabled ? 'text-primary-300 cursor-not-allowed' : 'text-primary-900 hover:bg-primary-100 cursor-pointer'}
                 ${selected ? 'bg-primary-900 text-white hover:bg-primary-900' : ''}
                 ${inRange ? 'bg-primary-100' : ''}
@@ -177,7 +239,12 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, selectedDates = { che
                 ${booked || blocked ? 'bg-red-50 line-through' : ''}
               `}
             >
-              {format(date, 'd')}
+              <span>{format(date, 'd')}</span>
+              {price && !disabled && (
+                <span className={`text-xs mt-1 ${selected ? 'text-gold-200' : 'text-primary-500'}`}>
+                  {(price / 1000000).toFixed(1)}jt
+                </span>
+              )}
             </button>
           );
         })}

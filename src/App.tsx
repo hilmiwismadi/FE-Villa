@@ -12,6 +12,7 @@ import PaymentPage from './pages/PaymentPage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import AffiliatorDashboardPage from './pages/AffiliatorDashboardPage';
 import DashboardTab from './pages/owner/DashboardTab';
+import OrdersPage from './pages/owner/OrdersPage';
 import PendingTab from './pages/owner/PendingTab';
 import ActiveTab from './pages/owner/ActiveTab';
 import PreviousTab from './pages/owner/PreviousTab';
@@ -53,9 +54,12 @@ function App() {
           <Route path="owner" element={<OwnerLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashboardTab />} />
-            <Route path="pending" element={<PendingTab />} />
-            <Route path="active" element={<ActiveTab />} />
-            <Route path="previous" element={<PreviousTab />} />
+            <Route path="orders" element={<OrdersPage />}>
+              <Route index element={<Navigate to="pending" replace />} />
+              <Route path="pending" element={<PendingTab />} />
+              <Route path="active" element={<ActiveTab />} />
+              <Route path="previous" element={<PreviousTab />} />
+            </Route>
             <Route path="calendar" element={<CalendarTab />} />
             <Route path="pricing" element={<PricingTab />} />
             <Route path="users" element={<UsersTab />} />

@@ -4,6 +4,10 @@ import { differenceInDays, format, eachDayOfInterval, isSameDay } from 'date-fns
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import Calendar from '../components/Calendar';
+import AvailabilityErrorModal from '../components/AvailabilityErrorModal';
+import type { CalendarDay } from '../types';
+import { getCalendar, checkAvailability, ApiError, type AvailabilityResponse } from '../services/orderService';
+import { validatePromo } from '../services/promoService';
 
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +27,10 @@ const BookingCalendarPage: React.FC = () => {
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
   const [showBookingMethodModal, setShowBookingMethodModal] = useState(false);
+  const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<AvailabilityResponse | null>(null);
+  const [validatingPromo, setValidatingPromo] = useState(false);
 
   // TODO: Replace with API fetch - make dynamic
   const adminWhatsApp = '6281809252706';
@@ -44,6 +52,26 @@ const BookingCalendarPage: React.FC = () => {
   useEffect(() => {
     setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
   }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime()]);
+
+  // Fetch calendar data for current month
+  const handleMonthChange = async (month: string) => {
+    try {
+      const response = await getCalendar(month);
+      setCalendarData(response.days);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        console.error('Failed to fetch calendar data:', error.message);
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    }
+  };
+
+  // Fetch initial calendar on mount
+  useEffect(() => {
+    const currentMonth = new Date();
+    handleMonthChange(format(currentMonth, 'yyyy-MM'));
+  }, []);
 
   const calculatePrice = () => {
     if (numberOfNights <= 0) return;
@@ -70,7 +98,7 @@ const BookingCalendarPage: React.FC = () => {
 
     if (wasRemoved) {
       const removed = selectedDates.find(
-        sd => !dates.some(d => isSameDay(d, sd))
+        (sd: Date) => !dates.some(d => isSameDay(d, sd))
       );
       if (!removed) { setSelectedDates(dates); return; }
 
@@ -94,20 +122,51 @@ const BookingCalendarPage: React.FC = () => {
     }
   };
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError('');
     setPromoSuccess('');
-    const validPromoCodes = [
-      { code: 'TRAVEL10', discountPercentage: 10, affiliateId: 'aff1', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-      { code: 'SUMMER25', discountPercentage: 25, affiliateId: 'aff2', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-    ];
-    const promo = validPromoCodes.find(p => p.code === promoCode.toUpperCase());
-    if (promo) {
-      setAppliedPromo(promo);
-      setPromoSuccess(`${promo.discountPercentage}% ${t.booking.calendar.discountApplied}`);
-    } else {
-      setPromoError(t.booking.calendar.invalidPromo);
+    setValidatingPromo(true);
+
+    // Only validate promo if we have dates and promo code
+    // Phone is not required here - validation happens in /book/form
+    if (!derivedCheckIn || !derivedCheckOut || !promoCode) {
+      setValidatingPromo(false);
+      return;
+    }
+
+    try {
+      const response = await validatePromo({
+        code: promoCode,
+        checkIn: format(derivedCheckIn, 'yyyy-MM-dd'),
+        checkOut: format(derivedCheckOut, 'yyyy-MM-dd'),
+        guestPhone: '', // Will be validated in /book/form when phone is entered
+      });
+
+      if (response.valid) {
+        setAppliedPromo({
+          code: promoCode.toUpperCase(),
+          discountPercentage: response.discountValue || 0,
+          discountType: response.discountType,
+          dayCondition: response.dayCondition,
+          customDays: response.customDays,
+          validFrom: new Date(),
+          validUntil: new Date(),
+          isActive: true,
+        });
+        setPromoSuccess(`${t.booking.calendar.discountApplied}`);
+      } else {
+        setPromoError(response.reason || t.booking.calendar.invalidPromo);
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setPromoError(error.message || t.booking.calendar.invalidPromo);
+      } else {
+        setPromoError(t.booking.calendar.invalidPromo);
+      }
       setAppliedPromo(null);
+    } finally {
+      setValidatingPromo(false);
     }
   };
 
@@ -126,9 +185,35 @@ const BookingCalendarPage: React.FC = () => {
     setShowBookingMethodModal(true);
   };
 
-  const handleBookViaWebsite = () => {
+  const handleBookViaWebsite = async () => {
     setShowBookingMethodModal(false);
-    navigate(localePath('/book/form'));
+
+    if (!derivedCheckIn || !derivedCheckOut) {
+      alert(t.booking.calendar.selectAtLeast2Dates);
+      return;
+    }
+
+    // Check availability before proceeding
+    setCheckingAvailability(true);
+    try {
+      const checkInStr = format(derivedCheckIn, 'yyyy-MM-dd');
+      const checkOutStr = format(derivedCheckOut, 'yyyy-MM-dd');
+      const response = await checkAvailability(checkInStr, checkOutStr);
+
+      if (!response.available) {
+        setAvailabilityError(response);
+        // Clear selected dates so user can start fresh
+        setSelectedDates([]);
+        return;
+      }
+
+      navigate(localePath('/book/form'));
+    } catch (error) {
+      console.error('Availability check failed:', error);
+      alert('Failed to check availability. Please try again.');
+    } finally {
+      setCheckingAvailability(false);
+    }
   };
 
   const handleBookViaWhatsApp = () => {
@@ -181,6 +266,8 @@ const BookingCalendarPage: React.FC = () => {
                 onDateToggle={handleDateToggle}
                 bookedDates={bookedDates}
                 blockedDates={blockedDates}
+                calendarData={calendarData}
+                onMonthChange={handleMonthChange}
               />
 
               {derivedCheckIn && derivedCheckOut && (
@@ -201,10 +288,10 @@ const BookingCalendarPage: React.FC = () => {
             <div className="flex gap-4 mt-6">
               <button
                 onClick={handleContinue}
-                disabled={selectedDates.length < 2}
+                disabled={selectedDates.length < 2 || checkingAvailability}
                 className="btn-primary flex-1"
               >
-                {t.booking.calendar.continue}
+                {checkingAvailability ? 'Checking...' : t.booking.calendar.continue}
               </button>
             </div>
           </div>
@@ -251,7 +338,7 @@ const BookingCalendarPage: React.FC = () => {
                         placeholder={t.booking.calendar.enterCode}
                         className="input-field flex-1 uppercase text-sm"
                       />
-                      <button onClick={handleApplyPromo} className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors" disabled={!promoCode}>{t.booking.calendar.apply}</button>
+                      <button onClick={handleApplyPromo} className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors" disabled={!promoCode || validatingPromo}>{validatingPromo ? 'Checking...' : t.booking.calendar.apply}</button>
                     </div>
                     {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}
                     {promoSuccess && <p className="mt-2 text-xs text-green-600">{promoSuccess}</p>}
@@ -300,6 +387,14 @@ const BookingCalendarPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Availability Error Modal */}
+      <AvailabilityErrorModal
+        isOpen={!!availabilityError}
+        onClose={() => setAvailabilityError(null)}
+        blockedDates={availabilityError?.blockedDates}
+        conflictingDates={availabilityError?.conflictingDates}
+      />
     </div>
   );
 };

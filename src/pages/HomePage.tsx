@@ -1,16 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import heroImage from '../assets/images/hero.png';
 import Calendar from '../components/Calendar';
+import type { CalendarDay } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
+import { getCalendar, ApiError } from '../services/orderService';
 
 const HomePage: React.FC = () => {
   const { t, localePath } = useTranslation();
+  const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // TODO: Replace with API fetch - GET /api/calendar/booked-dates
-  const bookedDates: Date[] = [];
-  // TODO: Replace with API fetch - GET /api/calendar/blocked-dates
-  const blockedDates: Date[] = [];
+  // Load initial month calendar data on mount (only once, not on every render)
+  useEffect(() => {
+    const initialMonth = format(new Date(), 'yyyy-MM');
+    fetchCalendarData(initialMonth);
+  }, []); // Empty dependency array = runs only on mount
+
+  // Fetch calendar data for current month
+  const fetchCalendarData = async (month: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getCalendar(month);
+      setCalendarData(response.days);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        console.error('Failed to fetch calendar data:', err.message);
+        setError('Failed to load availability. Please try again later.');
+      } else {
+        console.error('Unexpected error:', err);
+        setError('An unexpected error occurred.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const scrollToAvailability = () => {
     document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' });
@@ -132,11 +159,26 @@ const HomePage: React.FC = () => {
           </p>
 
           <div className="max-w-3xl mx-auto">
-            <Calendar
-              readOnly
-              bookedDates={bookedDates}
-              blockedDates={blockedDates}
-            />
+            {loading && (
+              <div className="text-center text-primary-700 py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold-600 mb-4"></div>
+                <p>Loading availability...</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            {!loading && (
+              <Calendar
+                readOnly
+                calendarData={calendarData}
+                onMonthChange={fetchCalendarData}
+              />
+            )}
 
             {/* Book Now Button */}
             <div className="text-center mt-8">

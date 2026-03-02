@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { differenceInDays, format, eachDayOfInterval, isSameDay } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import Calendar from '../components/Calendar';
-import type { GuestInfo } from '../types';
+import AvailabilityErrorModal from '../components/AvailabilityErrorModal';
+import type { GuestInfo, CalendarDay } from '../types';
+import {
+  getCalendar,
+  checkAvailability,
+  type AvailabilityResponse,
+} from '../services/orderService';
 
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +30,12 @@ const BookingPage: React.FC = () => {
   const [promoSuccess, setPromoSuccess] = useState('');
   const [selectedDatesList, setSelectedDatesList] = useState<Date[]>([]);
   const [showBookingMethodModal, setShowBookingMethodModal] = useState(false);
+
+  // Calendar and availability state
+  const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<AvailabilityResponse | null>(null);
 
   // TODO: Replace with API fetch - make dynamic
   const adminWhatsApp = '6281809252706';
@@ -59,6 +71,27 @@ const BookingPage: React.FC = () => {
   useEffect(() => {
     setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
   }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime()]);
+
+  // Fetch calendar data when month changes
+  const handleMonthChange = async (month: string) => {
+    setLoadingCalendar(true);
+    try {
+      const response = await getCalendar(month);
+      setCalendarData(response.days);
+    } catch (error) {
+      console.error('Failed to fetch calendar data:', error);
+      // Fallback to empty calendar on error
+      setCalendarData([]);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
+
+  // Load initial month calendar data
+  useEffect(() => {
+    const initialMonth = format(new Date(), 'yyyy-MM');
+    handleMonthChange(initialMonth);
+  }, []);
 
   const calculatePrice = () => {
     if (numberOfNights <= 0) return;
@@ -170,9 +203,32 @@ const BookingPage: React.FC = () => {
     setShowBookingMethodModal(false);
   };
 
-  const handleBookViaWebsite = () => {
+  const handleBookViaWebsite = async () => {
     setShowBookingMethodModal(false);
-    setStep('info');
+
+    // Check availability before proceeding
+    setCheckingAvailability(true);
+    try {
+      const checkInStr = format(derivedCheckIn!, 'yyyy-MM-dd');
+      const checkOutStr = format(derivedCheckOut!, 'yyyy-MM-dd');
+      console.log('Checking availability for:', checkInStr, 'to', checkOutStr);
+      const response = await checkAvailability(checkInStr, checkOutStr);
+      console.log('Availability response:', response);
+
+      if (!response.available) {
+        console.log('Dates NOT available, showing error');
+        setAvailabilityError(response);
+        return;
+      }
+
+      console.log('Dates available, proceeding to info step');
+      setStep('info');
+    } catch (error) {
+      console.error('Availability check failed:', error);
+      alert('Failed to check availability. Please try again.');
+    } finally {
+      setCheckingAvailability(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -243,13 +299,21 @@ const BookingPage: React.FC = () => {
                   <p className="text-sm text-primary-600 mb-4">
                     Click on dates to select your stay. Click again to deselect.
                   </p>
-                  <Calendar
-                    multiSelect
-                    selectedDatesList={selectedDatesList}
-                    onDateToggle={handleDateToggle}
-                    bookedDates={bookedDates}
-                    blockedDates={blockedDates}
-                  />
+                  {loadingCalendar ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-900"></div>
+                    </div>
+                  ) : (
+                    <Calendar
+                      multiSelect
+                      selectedDatesList={selectedDatesList}
+                      onDateToggle={handleDateToggle}
+                      bookedDates={bookedDates}
+                      blockedDates={blockedDates}
+                      calendarData={calendarData}
+                      onMonthChange={handleMonthChange}
+                    />
+                  )}
 
                   {derivedCheckIn && derivedCheckOut && (
                     <div className="mt-6 p-4 bg-primary-50 border border-primary-200">
@@ -615,6 +679,14 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Availability Error Modal */}
+      <AvailabilityErrorModal
+        isOpen={!!availabilityError}
+        onClose={() => setAvailabilityError(null)}
+        blockedDates={availabilityError?.blockedDates}
+        conflictingDates={availabilityError?.conflictingDates}
+      />
     </div>
   );
 };

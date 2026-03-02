@@ -26,11 +26,17 @@ export interface PricingRule {
 
 export interface PromoCode {
   code: string;
-  discountPercentage: number;
+  discountPercentage: number; // Legacy field for backward compatibility
   affiliateId?: string;
   validFrom: Date;
   validUntil: Date;
   isActive: boolean;
+
+  // New fields from API response (GET /promo/validate)
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  dayCondition?: 'all' | 'weekday' | 'weekend' | 'custom';
+  customDays?: number[] | null;
 }
 
 export interface GuestInfo {
@@ -93,6 +99,12 @@ export interface Booking {
   status: 'pending' | 'confirmed' | 'rejected' | 'completed';
   createdAt: Date;
   updatedAt?: Date;
+}
+
+export interface CalendarDay {
+  date: string; // YYYY-MM-DD
+  status: 'available' | 'booked' | 'blocked' | 'in_transaction';
+  price?: number;
 }
 
 export interface CalendarDate {

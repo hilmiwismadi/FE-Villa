@@ -26,6 +26,7 @@
   "home": {
     "heroTitle": "JAPANESE VILLA SEKIPAN",
     "heroSubtitle": "Where Japanese Serenity Meets Mountain Views",
+      "validating": "Validating...",
     "heroButton": "Reserve Your Stay",
     "introTitle": "Japanese Architecture Meets Modern Comfort",
     "introText": "Experience the harmony of traditional Japanese design principles and contemporary luxury. Villa Sekipan embodies the essence of Japanese aesthetics—minimalist elegance, natural materials, and a seamless connection between indoor and outdoor spaces, all while offering breathtaking mountain views.",
@@ -113,6 +114,7 @@
       "total": "Total",
       "selectDatesForPricing": "Select dates to see pricing",
       "promoCode": "Promo Code",
+      "validating": "Validating...",
       "enterCode": "Enter code",
       "apply": "Apply",
       "remove": "Remove",
@@ -179,6 +181,7 @@
       "discount": "Discount ({code} - {percent}%)",
       "total": "Total",
       "promoCode": "Promo Code",
+      "validating": "Validating...",
       "enterCode": "Enter code",
       "apply": "Apply",
       "remove": "Remove",

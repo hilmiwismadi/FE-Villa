@@ -4,22 +4,18 @@ import type { DateRange, GuestInfo, PromoCode } from '../types';
 
 interface BookingContextType {
   dateRange: DateRange;
-  setDateRange: (dates: DateRange) => void;
+  setDateRange: (range: DateRange) => void;
   selectedDates: Date[];
   setSelectedDates: (dates: Date[]) => void;
   guestInfo: GuestInfo | null;
-  setGuestInfo: (info: GuestInfo) => void;
+  setGuestInfo: (info: GuestInfo | null) => void;
   formData: GuestInfo;
-  setFormData: (data: GuestInfo) => void;
+  setFormData: (info: GuestInfo) => void;
   promoCode: string;
   setPromoCode: (code: string) => void;
   appliedPromo: PromoCode | null;
   setAppliedPromo: (promo: PromoCode | null) => void;
-  pricing: {
-    originalPrice: number;
-    discountAmount: number;
-    finalPrice: number;
-  };
+  pricing: { originalPrice: number; discountAmount: number; finalPrice: number };
   setPricing: (pricing: { originalPrice: number; discountAmount: number; finalPrice: number }) => void;
   resetBooking: () => void;
 }

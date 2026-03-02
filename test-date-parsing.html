@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Date Parsing Test</title>
+</head>
+<body>
+  <script type="module">
+    import { parse, format } from 'https://cdn.jsdelivr.net/npm/date-fns@4.1.0/+esm';
+
+    const dayDate = '2026-03-10';
+    const parsed = parse(dayDate, 'yyyy-MM-dd', new Date());
+    const formatted = format(parsed, 'yyyy-MM-dd');
+
+    console.log('Original string:', dayDate);
+    console.log('Parsed Date:', parsed);
+    console.log('Formatted back:', formatted);
+    console.log('Are they equal?', formatted === dayDate);
+
+    document.body.innerHTML = `
+      <p>Original string: ${dayDate}</p>
+      <p>Parsed Date: ${parsed.toISOString()}</p>
+      <p>Formatted back: ${formatted}</p>
+      <p>Are they equal? ${formatted === dayDate}</p>
+    `;
+  </script>
+</body>
+</html>

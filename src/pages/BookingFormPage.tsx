@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
+import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ const BookingFormPage: React.FC = () => {
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');
+  const [validatingPromo, setValidatingPromo] = useState(false);
 
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
@@ -36,20 +39,54 @@ const BookingFormPage: React.FC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleApplyPromo = () => {
+  // Auto-validate promo when phone is entered and dates are selected
+  useEffect(() => {
+    if (derivedCheckIn && derivedCheckOut && formData.phone && promoCode && !appliedPromo && !validatingPromo) {
+      handleApplyPromo();
+    }
+  }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime(), formData.phone, promoCode]);
+
+  const handleApplyPromo = async () => {
     setPromoError('');
     setPromoSuccess('');
-    const validPromoCodes = [
-      { code: 'TRAVEL10', discountPercentage: 10, affiliateId: 'aff1', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-      { code: 'SUMMER25', discountPercentage: 25, affiliateId: 'aff2', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-    ];
-    const promo = validPromoCodes.find(p => p.code === promoCode.toUpperCase());
-    if (promo) {
-      setAppliedPromo(promo);
-      setPromoSuccess(`${promo.discountPercentage}% ${t.booking.calendar.discountApplied}`);
-    } else {
-      setPromoError(t.booking.calendar.invalidPromo);
+    setValidatingPromo(true);
+
+    // Validate with phone if available
+    const guestPhone = formData.phone || '';
+
+    try {
+      const response = await promoValidatePromo({
+        code: promoCode,
+        checkIn: format(derivedCheckIn, 'yyyy-MM-dd'),
+        checkOut: format(derivedCheckOut, 'yyyy-MM-dd'),
+        guestPhone,
+      });
+
+      if (response.valid) {
+        setAppliedPromo({
+          code: promoCode.toUpperCase(),
+          discountPercentage: response.discountValue || 0,
+          discountType: response.discountType,
+          dayCondition: response.dayCondition,
+          customDays: response.customDays,
+          validFrom: new Date(),
+          validUntil: new Date(),
+          isActive: true,
+        });
+        setPromoSuccess(t.booking.calendar.discountApplied);
+      } else {
+        setPromoError(response.reason || t.booking.calendar.invalidPromo);
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setPromoError(error.message || t.booking.calendar.invalidPromo);
+      } else {
+        setPromoError(t.booking.calendar.invalidPromo);
+      }
       setAppliedPromo(null);
+    } finally {
+      setValidatingPromo(false);
     }
   };
 
@@ -338,10 +375,14 @@ const BookingFormPage: React.FC = () => {
                       />
                       <button
                         onClick={handleApplyPromo}
-                        className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors"
-                        disabled={!promoCode}
+                        className={`px-3 py-2 text-sm transition-colors ${
+                          validatingPromo
+                            ? 'bg-primary-300 text-white cursor-not-allowed'
+                            : 'bg-primary-900 text-white hover:bg-primary-800'
+                        }`}
+                        disabled={!promoCode || validatingPromo}
                       >
-                        {t.booking.calendar.apply}
+                        {validatingPromo ? t.booking.calendar.validating : t.booking.calendar.apply}
                       </button>
                     </div>
                     {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}

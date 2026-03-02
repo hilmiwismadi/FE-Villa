@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
+import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const BookingReviewPage: React.FC = () => {
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
+  const [validatingPromo, setValidatingPromo] = useState(false);
 
   if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {
     navigate(localePath('/book/calendar'));
@@ -37,20 +39,46 @@ const BookingReviewPage: React.FC = () => {
     setPricing({ originalPrice, discountAmount, finalPrice: originalPrice - discountAmount });
   }, [numberOfNights, appliedPromo]);
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError('');
     setPromoSuccess('');
-    const validPromoCodes = [
-      { code: 'TRAVEL10', discountPercentage: 10, affiliateId: 'aff1', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-      { code: 'SUMMER25', discountPercentage: 25, affiliateId: 'aff2', validFrom: new Date(), validUntil: new Date(2026, 11, 31), isActive: true },
-    ];
-    const promo = validPromoCodes.find(p => p.code === promoCode.toUpperCase());
-    if (promo) {
-      setAppliedPromo(promo);
-      setPromoSuccess(`${promo.discountPercentage}% ${t.booking.review.discountApplied}`);
-    } else {
-      setPromoError(t.booking.review.invalidPromo);
+    setValidatingPromo(true);
+
+    const guestPhone = formData.phone || '';
+
+    try {
+      const response = await promoValidatePromo({
+        code: promoCode,
+        checkIn: dateRange.checkIn ? format(dateRange.checkIn, 'yyyy-MM-dd') : '',
+        checkOut: dateRange.checkOut ? format(dateRange.checkOut, 'yyyy-MM-dd') : '',
+        guestPhone,
+      });
+
+      if (response.valid) {
+        setAppliedPromo({
+          code: promoCode.toUpperCase(),
+          discountPercentage: response.discountValue || 0,
+          discountType: response.discountType,
+          dayCondition: response.dayCondition,
+          customDays: response.customDays,
+          validFrom: new Date(),
+          validUntil: new Date(),
+          isActive: true,
+        });
+        setPromoSuccess(t.booking.calendar.discountApplied);
+      } else {
+        setPromoError(response.reason || t.booking.review.invalidPromo);
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setPromoError(error.message || t.booking.review.invalidPromo);
+      } else {
+        setPromoError(t.booking.review.invalidPromo);
+      }
       setAppliedPromo(null);
+    } finally {
+      setValidatingPromo(false);
     }
   };
 
@@ -195,10 +223,14 @@ const BookingReviewPage: React.FC = () => {
                   />
                   <button
                     onClick={handleApplyPromo}
-                    className="px-4 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors"
-                    disabled={!promoCode}
+                    className={`px-4 py-2 text-sm transition-colors ${
+                      validatingPromo
+                        ? 'bg-primary-300 text-white cursor-not-allowed'
+                        : 'bg-primary-900 text-white hover:bg-primary-800'
+                    }`}
+                    disabled={!promoCode || validatingPromo}
                   >
-                    {t.booking.review.apply}
+                    {validatingPromo ? t.booking.calendar.validating : t.booking.review.apply}
                   </button>
                 </div>
                 {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}
