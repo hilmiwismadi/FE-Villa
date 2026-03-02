@@ -126,6 +126,16 @@ const BookingFormPage: React.FC = () => {
       return;
     }
 
+    // Check if formData.orderId = dateRange.checkIn dates match
+    // If not, clear stale orderId from previous booking
+    if (formData.orderId && derivedCheckIn && derivedCheckOut) {
+      const guestDateStr = format(derivedCheckIn, 'yyyy-MM-dd');
+      if (!formData.orderId.startsWith(guestDateStr) && !formData.orderId.includes(guestDateStr)) {
+        console.log('Stale orderId detected, clearing:', formData.orderId);
+        setFormData({ orderId: undefined, ...formData } as any);
+      }
+    }
+
     setCreatingOrder(true);
     setOrderError('');
 
@@ -157,6 +167,9 @@ const BookingFormPage: React.FC = () => {
       console.log('guestCount value:', orderData.guestCount, 'type:', typeof orderData.guestCount);
 
       const response: OrderResponse = await createOrder(orderData);
+
+      console.log('Order created successfully:', response.orderId);
+      console.log('Order status:', response.status);
 
       // Store order ID in context for payment page
       setGuestInfo({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths, parse } from 'date-fns';
 import { useTranslation } from '../i18n/LanguageContext';
 import type { CalendarDay } from '../types';
@@ -10,12 +10,12 @@ interface CalendarProps {
   selectedDatesList?: Date[];
   /** Called when a date is toggled in multiSelect mode */
   onDateToggle?: (dates: Date[]) => void;
-  /** Called when a date is clicked in multiSelect mode - passes the raw clicked date for parent to handle logic */
+  /** Called when a date is clicked in multiSelect mode - passes raw clicked date for parent to handle logic */
   onDateClickInMultiSelect?: (date: Date) => void;
   bookedDates?: Date[];
   blockedDates?: Date[];
   readOnly?: boolean;
-  /** Enable click-to-toggle{ individual dates mode */
+  /** Enable click-to-toggle individual dates mode */
   multiSelect?: boolean;
   /** Initial month (YYYY-MM string) - used to sync calendar state with parent */
   defaultMonth?: string;
@@ -42,7 +42,6 @@ const Calendar: React.FC<CalendarProps> = ({
   const [currentMonth, setCurrentMonth] = useState(defaultMonth ? parse(defaultMonth, 'yyyy-MM', new Date()) : new Date());
   const today = startOfToday();
   const { t, dateFnsLocale } = useTranslation();
-
 
   // Map calendar data to unavailable dates
   const getBookedDatesFromAPI = (): Date[] => {
@@ -97,7 +96,6 @@ const Calendar: React.FC<CalendarProps> = ({
     const dateStr = format(date, 'yyyy-MM-dd');
     const checkInStr = selectedDates.checkIn ? format(selectedDates.checkIn, 'yyyy-MM-dd') : null;
     const checkOutStr = selectedDates.checkOut ? format(selectedDates.checkOut, 'yyyy-MM-dd') : null;
-
     return dateStr === checkInStr || dateStr === checkOutStr;
   };
 
@@ -114,15 +112,22 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const handleDateClick = (date: Date) => {
+    console.log('[[Calendar handleDateClick] date clicked:', format(date, 'yyyy-MM-dd'), 'multiSelect:', multiSelect);
+
     if (isBefore(date, today) || isDateBooked(date) || isDateBlocked(date)) {
+      console.log('[Calendar handleDateClick] date is before today or booked/blocked, returning');
       return;
     }
 
+    // When multiSelect and onDateClickInMultiSelect is provided, pass date to parent
+    // Parent handles all contiguous logic
     if (multiSelect && onDateClickInMultiSelect) {
+      console.log('[Calendar handleDateClick] calling onDateClickInMultiSelect');
       onDateClickInMultiSelect(date);
       return;
     }
 
+    // Fallback to onDateToggle if provided (works in both multiSelect and non-multiSelect modes)
     if (onDateToggle) {
       const dateStr = format(date, 'yyyy-MM-dd');
       const exists = selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
@@ -163,7 +168,7 @@ const Calendar: React.FC<CalendarProps> = ({
           aria-label={t.calendar.prevMonth}
         >
           <svg className="w-5 h-5 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7 7" />
           </svg>
         </button>
 
@@ -177,7 +182,7 @@ const Calendar: React.FC<CalendarProps> = ({
           aria-label={t.calendar.nextMonth}
         >
           <svg className="w-5 h-5 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7" />
           </svg>
         </button>
       </div>
@@ -249,7 +254,7 @@ const Calendar: React.FC<CalendarProps> = ({
             >
               <span>{format(date, 'd')}</span>
               {price && !disabled && (
-                <span className={`text-xs mt-1 ${selected ? 'text-gold-200' : 'text-primary-500'}`}>
+                <span className="text-xs mt-1">
                   {(price / 1000000).toFixed(1)}jt
                 </span>
               )}
