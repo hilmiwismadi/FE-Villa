@@ -17,12 +17,9 @@ const BookingReviewPage: React.FC = () => {
   const [promoSuccess, setPromoSuccess] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
 
-  if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {
-    navigate(localePath('/book/calendar'));
-    return null;
-  }
-
-  const numberOfNights = differenceInDays(dateRange.checkOut, dateRange.checkIn);
+  const numberOfNights = dateRange.checkIn && dateRange.checkOut
+    ? differenceInDays(dateRange.checkOut, dateRange.checkIn)
+    : 0;
   const guest = guestInfo || formData;
   const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
 
@@ -37,7 +34,13 @@ const BookingReviewPage: React.FC = () => {
       discountAmount = (originalPrice * appliedPromo.discountPercentage) / 100;
     }
     setPricing({ originalPrice, discountAmount, finalPrice: originalPrice - discountAmount });
-  }, [numberOfNights, appliedPromo]);
+  }, [numberOfNights, appliedPromo, setPricing]);
+
+  // Redirect if no booking data
+  if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {
+    navigate(localePath('/book/calendar'));
+    return null;
+  }
 
   const handleApplyPromo = async () => {
     setPromoError('');

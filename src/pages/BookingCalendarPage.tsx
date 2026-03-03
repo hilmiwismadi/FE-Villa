@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
@@ -37,15 +37,25 @@ const BookingCalendarPage: React.FC = () => {
   const adminWhatsApp = '6281809252706';
   const basePrice = 2000000;
 
-  // Derive checkIn/checkOut from selected dates
-  const derivedCheckIn = selectedDates.length >= 1 ? selectedDates.sort((a, b) => a.getTime() - b.getTime())[0] : null;
-  const derivedCheckOut = derivedCheckIn ? addDays(derivedCheckIn, selectedDates.length) : null;
+  // Derive checkIn/checkOut from selected dates using useMemo to prevent infinite loops
+  const derivedCheckIn = useMemo(() => {
+    if (selectedDates.length >= 1) {
+      const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
+      return sorted[0];
+    }
+    return null;
+  }, [selectedDates.length, ...selectedDates.map(d => d.getTime())]);
+
+  const derivedCheckOut = useMemo(() => {
+    return derivedCheckIn ? addDays(derivedCheckIn, selectedDates.length) : null;
+  }, [derivedCheckIn, selectedDates.length]);
+
   const numberOfNights = selectedDates.length;
 
   // Sync derived dates to context
   useEffect(() => {
     setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
-  }, [selectedDates.length, JSON.stringify(selectedDates).substring(0, 50)]);
+  }, [derivedCheckIn, derivedCheckOut, setDateRange]);
 
   // Fetch calendar data for current month
   const handleMonthChange = async (month: string) => {

@@ -26,16 +26,22 @@ const PaymentPage: React.FC = () => {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
 
+  // Check if booking data is valid
+  const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
+
   // Redirect if no booking data
-  if (!dateRange.checkIn || !dateRange.checkOut) {
-    navigate(localePath('/book/calendar'));
-    return null;
-  }
+  useEffect(() => {
+    if (!hasValidBooking) {
+      navigate(localePath('/book/calendar'));
+    }
+  }, [hasValidBooking, localePath, navigate]);
 
   // Create order on mount if we don't have an orderId
   useEffect(() => {
+    if (!hasValidBooking) return;
+
     if (orderId) {
-      // If we have an orderId, fetch the existing order
+      // If we have an orderId, fetch existing order
       const fetchOrder = async () => {
         try {
           const response = await getOrder(orderId);
@@ -102,7 +108,12 @@ const PaymentPage: React.FC = () => {
 
       createNewOrder();
     }
-  }, [orderId]);
+  }, [orderId, hasValidBooking, dateRange.checkIn, dateRange.checkOut, formData, appliedPromo?.code, setPricing]);
+
+  // Early return for render (after all hooks)
+  if (!hasValidBooking) {
+    return null;
+  }
 
   const handleConfirmPayment = async () => {
     if (!orderResponse?.orderId) return;
@@ -114,10 +125,6 @@ const PaymentPage: React.FC = () => {
       await confirmPayment(orderResponse.orderId);
       setPaymentConfirmed(true);
       setSubmitError(null);
-
-      // Navigate to confirmation page after successful payment confirmation
-      // TODO: Create confirmation page and route there
-      // navigate(localePath(`/book/confirmation/${orderResponse.orderId}`));
     } catch (error) {
       if (error instanceof ApiError) {
         setConfirmPaymentError(error.message || 'Failed to confirm payment');

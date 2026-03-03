@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
@@ -33,10 +33,10 @@ const BookingFormPage: React.FC = () => {
 
   // Redirect if no dates selected (must use useEffect to avoid warning)
   useEffect(() => {
-    if (selectedDates.length < 2 || !derivedCheckIn || !derivedCheckOut) {
+    if (selectedDates.length === 0 || !derivedCheckIn || !derivedCheckOut) {
       navigate(localePath('/book/calendar'));
     }
-  }, [selectedDates.length, derivedCheckIn?.getTime(), derivedCheckOut?.getTime()]);
+  }, [selectedDates.length, derivedCheckIn, derivedCheckOut, localePath, navigate]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -49,14 +49,7 @@ const BookingFormPage: React.FC = () => {
     }
   };
 
-  // Auto-validate promo when phone is entered and dates are selected
-  useEffect(() => {
-    if (derivedCheckIn && derivedCheckOut && formData.phone && promoCode && !appliedPromo && !validatingPromo) {
-      handleApplyPromo();
-    }
-  }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime(), formData.phone, promoCode]);
-
-  const handleApplyPromo = async () => {
+  const handleApplyPromo = useCallback(async () => {
     setPromoError('');
     setPromoSuccess('');
     setValidatingPromo(true);
@@ -98,7 +91,14 @@ const BookingFormPage: React.FC = () => {
     } finally {
       setValidatingPromo(false);
     }
-  };
+  }, [derivedCheckIn, derivedCheckOut, formData.phone, promoCode, t, setAppliedPromo]);
+
+  // Auto-validate promo when phone is entered and dates are selected
+  useEffect(() => {
+    if (derivedCheckIn && derivedCheckOut && formData.phone && promoCode && !appliedPromo && !validatingPromo) {
+      handleApplyPromo();
+    }
+  }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime(), formData.phone, promoCode, handleApplyPromo, appliedPromo, validatingPromo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRemovePromo = () => {
     setPromoCode('');
@@ -132,7 +132,9 @@ const BookingFormPage: React.FC = () => {
       const guestDateStr = format(derivedCheckIn, 'yyyy-MM-dd');
       if (!formData.orderId.startsWith(guestDateStr) && !formData.orderId.includes(guestDateStr)) {
         console.log('Stale orderId detected, clearing:', formData.orderId);
-        setFormData({ orderId: undefined, ...formData } as any);
+        const { orderId: _orderId, ...restFormData } = formData;
+        void _orderId;
+        setFormData({ orderId: undefined, ...restFormData });
       }
     }
 
