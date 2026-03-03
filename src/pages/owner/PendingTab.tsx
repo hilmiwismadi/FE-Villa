@@ -9,6 +9,7 @@ const PendingTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ orderId: string; booking: PendingBooking } | null>(null);
 
   // Fetch pending bookings on mount (both in_transaction and pending)
   const fetchPendingBookings = async () => {
@@ -19,7 +20,14 @@ const PendingTab: React.FC = () => {
         getAdminOrders('pending', 1, 100),
         getAdminOrders('in_transaction', 1, 100),
       ]);
-      setPendingBookings([...inTransactionRes.orders, ...pendingRes.orders]);
+
+      // Merge all orders and sort by createdAt descending (newest first)
+      // Pending orders will naturally appear higher as they're confirmed more recently
+      const allBookings = [...pendingRes.orders, ...inTransactionRes.orders];
+      const sortedBookings = allBookings.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setPendingBookings(sortedBookings);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -35,12 +43,21 @@ const PendingTab: React.FC = () => {
     fetchPendingBookings();
   }, []);
 
-  const handleApprove = async (orderId: string) => {
+  const handleApproveClick = (orderId: string) => {
+    const booking = pendingBookings.find(b => b.orderId === orderId);
+    if (!booking) return;
+    setConfirmModal({ orderId, booking });
+  };
+
+  const confirmApprove = async () => {
+    if (!confirmModal) return;
+
     try {
-      setProcessing(orderId);
-      await approveOrder(orderId);
+      setProcessing(confirmModal.orderId);
+      await approveOrder(confirmModal.orderId);
       // Remove from list after successful approval
-      setPendingBookings(prev => prev.filter(b => b.orderId !== orderId));
+      setPendingBookings(prev => prev.filter(b => b.orderId !== confirmModal.orderId));
+      setConfirmModal(null);
     } catch (err) {
       if (err instanceof ApiError) {
         alert(`Failed to approve order: ${err.message}`);
@@ -277,7 +294,7 @@ const PendingTab: React.FC = () => {
                 {booking.status === 'pending' ? (
                   <>
                     <button
-                      onClick={() => handleApprove(booking.orderId)}
+                      onClick={() => handleApproveClick(booking.orderId)}
                       disabled={processing === booking.orderId}
                       className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -299,6 +316,66 @@ const PendingTab: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Approve Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setConfirmModal(null)}>
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-serif text-primary-900 mb-4">Confirm Approval</h3>
+            <p className="text-primary-700 mb-6">Are you sure you want to approve this booking?</p>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Order ID</span>
+                <span className="text-sm font-medium text-primary-900">{confirmModal.booking.orderId}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Guest Name</span>
+                <span className="text-sm font-medium text-primary-900">{confirmModal.booking.guestName}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Guest Phone</span>
+                <span className="text-sm font-medium text-primary-900">{confirmModal.booking.guestPhone}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Check-in Date</span>
+                <span className="text-sm font-medium text-primary-900">{formatDate(confirmModal.booking.checkInDate)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Check-out Date</span>
+                <span className="text-sm font-medium text-primary-900">{formatDate(confirmModal.booking.checkOutDate)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-primary-100">
+                <span className="text-sm text-primary-600">Nights</span>
+                <span className="text-sm font-medium text-primary-900">{confirmModal.booking.nightCount} nights</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-sm text-primary-600">Total Amount</span>
+                <span className="text-lg font-bold text-primary-900">{formatCurrency(confirmModal.booking.totalAmount)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmApprove}
+                disabled={processing === confirmModal.orderId}
+                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {processing === confirmModal.orderId ? 'Approving...' : 'Approve Booking'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

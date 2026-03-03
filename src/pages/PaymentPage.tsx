@@ -20,6 +20,7 @@ const PaymentPage: React.FC = () => {
   const [createOrderError, setCreateOrderError] = useState<string | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
+  const [transferConfirmed, setTransferConfirmed] = useState(false);
 
   // Check if booking data is valid
   const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
@@ -65,6 +66,10 @@ const PaymentPage: React.FC = () => {
 
   const handleConfirmPayment = async () => {
     if (!orderResponse?.orderId) return;
+    if (!transferConfirmed) {
+      alert('Mohon centang kotak "Saya sudah transfer" sebelum mengirim pembayaran.');
+      return;
+    }
 
     setIsSubmitting(true);
     setConfirmPaymentError(null);
@@ -265,6 +270,24 @@ const PaymentPage: React.FC = () => {
         {/* Actions */}
         {orderResponse && !paymentConfirmed && (
           <div className="bg-white p-8 shadow-sm">
+            {/* Transfer Confirmation Checkbox */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={transferConfirmed}
+                  onChange={(e) => setTransferConfirmed(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <div className="text-sm text-primary-800">
+                  <span className="font-medium">Saya sudah transfer dana ke rekening:</span>
+                  <p className="text-primary-600 mt-1">
+                    Pastikan kembali nomor rekening dan jumlah transfer Anda. Centang kotak ini jika sudah benar, lalu klik tombol "Kirim Pembayaran" di bawah.
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div className="flex gap-4">
               <button
                 type="button"
@@ -280,7 +303,7 @@ const PaymentPage: React.FC = () => {
               <button
                 onClick={handleConfirmPayment}
                 className="btn-gold flex-1"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !transferConfirmed}
               >
                 {isSubmitting ? 'Confirming...' : t.booking.payment.submitBooking}
               </button>

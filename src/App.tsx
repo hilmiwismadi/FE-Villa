@@ -9,6 +9,8 @@ import BookingCalendarPage from './pages/BookingCalendarPage';
 import BookingFormPage from './pages/BookingFormPage';
 import BookingReviewPage from './pages/BookingReviewPage';
 import PaymentPage from './pages/PaymentPage';
+import PaymentConfirmedPage from './pages/PaymentConfirmedPage';
+import BookingSubmissionPage from './pages/BookingSubmissionPage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import AffiliatorDashboardPage from './pages/AffiliatorDashboardPage';
 import DashboardTab from './pages/owner/DashboardTab';
@@ -36,6 +38,8 @@ function App() {
             <Route path="book/review" element={<BookingReviewPage />} />
             <Route path="book/payment" element={<PaymentPage />} />
             <Route path="book/payment/:orderId" element={<PaymentPage />} />
+            <Route path="book/payment/confirmed/:orderId" element={<PaymentConfirmedPage />} />
+            <Route path="book/confirmation/:bookingId" element={<BookingSubmissionPage />} />
             <Route path="book/confirmation/:bookingId" element={<ConfirmationPage />} />
           </Route>
 
@@ -49,6 +53,8 @@ function App() {
             <Route path="book/review" element={<BookingReviewPage />} />
             <Route path="book/payment" element={<PaymentPage />} />
             <Route path="book/payment/:orderId" element={<PaymentPage />} />
+            <Route path="book/payment/confirmed/:orderId" element={<PaymentConfirmedPage />} />
+            <Route path="book/confirmation/:bookingId" element={<BookingSubmissionPage />} />
             <Route path="book/confirmation/:bookingId" element={<ConfirmationPage />} />
           </Route>
 

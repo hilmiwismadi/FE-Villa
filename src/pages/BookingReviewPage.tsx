@@ -28,19 +28,6 @@ const BookingReviewPage: React.FC = () => {
   const guest = guestInfo || formData;
   const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
 
-  const basePrice = 2000000; // TODO: Replace with API fetch
-
-  // Recalculate pricing when promo changes
-  useEffect(() => {
-    if (numberOfNights <= 0) return;
-    const originalPrice = basePrice * numberOfNights;
-    let discountAmount = 0;
-    if (appliedPromo) {
-      discountAmount = (originalPrice * appliedPromo.discountPercentage) / 100;
-    }
-    setPricing({ originalPrice, discountAmount, finalPrice: originalPrice - discountAmount });
-  }, [numberOfNights, appliedPromo, setPricing]);
-
   // Create order on mount if guestInfo has data but no orderId
   useEffect(() => {
     // Prevent duplicate API calls
