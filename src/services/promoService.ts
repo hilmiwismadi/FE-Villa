@@ -3,6 +3,8 @@
  * Base URL: http://localhost:4002 (dev) | http://<VPS_IP>:9999 (prod)
  */
 
+import { ApiError } from './errors';
+
 const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://villa-promo.izcy.tech';
 
 // Common types
@@ -78,8 +80,8 @@ export interface PromoUsage {
   usedAt: string;
 }
 
-// Re-export ApiError from shared errors file
-export { ApiError } from './errors';
+// Re-export ApiError for use by other files
+export { ApiError };
 
 // Helper function for API calls
 async function apiRequest<T>(

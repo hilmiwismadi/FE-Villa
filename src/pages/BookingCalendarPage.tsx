@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { differenceInDays, format, isSameDay, addDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import Calendar from '../components/Calendar';
@@ -89,6 +89,47 @@ const BookingCalendarPage: React.FC = () => {
 
     // Just sync dates from Calendar - Calendar handles all the logic
     setSelectedDates(dates);
+  };
+
+  // Handle date click in multi-select mode with contiguous logic
+  const handleDateClickInMultiSelect = (date: Date) => {
+    console.log('[handleDateClickInMultiSelect] clicked date:', format(date, 'yyyy-MM-dd'));
+    console.log('[handleDateClickInMultiSelect] current selectedDates:', selectedDates.map(d => format(d, 'yyyy-MM-dd')));
+
+    const dateStr = format(date, 'yyyy-MM-dd');
+
+    // If date is already selected, remove it
+    const isSelected = selectedDates.some(d => format(d, 'yyyy-MM-dd') === dateStr);
+    if (isSelected) {
+      console.log('[handleDateClickInMultiSelect] date already selected, removing');
+      setSelectedDates(selectedDates.filter(d => format(d, 'yyyy-MM-dd') !== dateStr));
+      return;
+    }
+
+    // If no dates selected, add this one
+    if (selectedDates.length === 0) {
+      console.log('[handleDateClickInMultiSelect] no dates selected, adding first date');
+      setSelectedDates([date]);
+      return;
+    }
+
+    // Check if new date is contiguous with existing selection
+    const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
+    const lastDate = sorted[sorted.length - 1];
+
+    const dayDifference = Math.abs(date.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    // If contiguous (within 1 day), add to selection
+    if (dayDifference === 1) {
+      console.log('[handleDateClickInMultiSelect] date is contiguous, adding to selection');
+      setSelectedDates([...selectedDates, date]);
+      return;
+    }
+
+    // If not contiguous, show confirmation modal to replace selection
+    console.log('[handleDateClickInMultiSelect] date is not contiguous, showing confirm modal');
+    setPendingDateToAdd(date);
+    setShowConfirmModal(true);
   };
 
   const handleConfirmReplace = () => {
@@ -213,8 +254,6 @@ const BookingCalendarPage: React.FC = () => {
     setShowBookingMethodModal(false);
   };
 
-  const nightLabel = numberOfNights > 1 ? t.booking.calendar.nightPlural : t.booking.calendar.nightSingular;
-
   return (
     <div className="section-padding bg-primary-50">
       <div className="container-custom max-w-6xl">
@@ -250,6 +289,7 @@ const BookingCalendarPage: React.FC = () => {
                 multiSelect={true}
                 selectedDatesList={selectedDates}
                 onDateToggle={handleDateToggle}
+                onDateClickInMultiSelect={handleDateClickInMultiSelect}
                 bookedDates={[]}
                 blockedDates={[]}
                 calendarData={calendarData}

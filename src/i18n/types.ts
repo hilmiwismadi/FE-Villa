@@ -119,6 +119,7 @@ export interface Translations {
       bookViaWhatsApp: string;
       bookViaWhatsAppDesc: string;
       whatsappMessage: string;
+      validating: string;
     };
     form: {
       title: string;

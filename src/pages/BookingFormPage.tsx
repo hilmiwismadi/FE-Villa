@@ -67,8 +67,8 @@ const BookingFormPage: React.FC = () => {
     try {
       const response = await promoValidatePromo({
         code: promoCode,
-        checkIn: format(derivedCheckIn, 'yyyy-MM-dd'),
-        checkOut: format(derivedCheckOut, 'yyyy-MM-dd'),
+        checkIn: derivedCheckIn ? format(derivedCheckIn, 'yyyy-MM-dd') : '',
+        checkOut: derivedCheckOut ? format(derivedCheckOut, 'yyyy-MM-dd') : '',
         guestPhone,
       });
 
@@ -427,11 +427,11 @@ const BookingFormPage: React.FC = () => {
               <div className="space-y-3 text-sm">
                 <div className="text-primary-700">
                   <p className="text-xs text-primary-500">{t.booking.calendar.checkIn}</p>
-                  <p className="font-medium">{derivedCheckIn.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="font-medium">{derivedCheckIn?.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) || ''}</p>
                 </div>
                 <div className="text-primary-700">
                   <p className="text-xs text-primary-500">{t.booking.calendar.checkOut}</p>
-                  <p className="font-medium">{derivedCheckOut.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="font-medium">{derivedCheckOut?.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) || ''}</p>
                 </div>
                 <div className="pt-3 border-t border-primary-200">
                   <div className="flex justify-between text-primary-700">
