@@ -44,7 +44,7 @@ const BookingCalendarPage: React.FC = () => {
       return sorted[0];
     }
     return null;
-  }, [selectedDates.length, ...selectedDates.map(d => d.getTime())]);
+  }, [selectedDates.length, ...selectedDates.map(d => d.getTime()), setSelectedDates]);
 
   const derivedCheckOut = useMemo(() => {
     return derivedCheckIn ? addDays(derivedCheckIn, selectedDates.length) : null;
@@ -77,9 +77,31 @@ const BookingCalendarPage: React.FC = () => {
     handleMonthChange(format(currentMonth, 'yyyy-MM'));
   }, []);
 
+  // Debug log for selectedDates changes
+  useEffect(() => {
+    console.log('[BookingCalendarPage] selectedDates changed:', selectedDates.map(d => format(d, 'yyyy-MM-dd')));
+    console.log('[BookingCalendarPage] derivedCheckIn:', derivedCheckIn ? format(derivedCheckIn, 'yyyy-MM-dd') : null);
+  }, [selectedDates]);
+
   const calculatePrice = () => {
     if (numberOfNights <= 0) return;
-    const originalPrice = basePrice * numberOfNights;
+
+    // Calculate price using actual prices from calendarData if available
+    let originalPrice = 0;
+    if (calendarData.length > 0) {
+      // Sum prices from calendarData for each selected date
+      selectedDates.forEach(date => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const dayData = calendarData.find(d => d.date === dateStr);
+        if (dayData && dayData.price) {
+          originalPrice += dayData.price;
+        }
+      });
+    } else {
+      // Fallback to basePrice if calendarData not available
+      originalPrice = basePrice * numberOfNights;
+    }
+
     let discountAmount = 0;
     if (appliedPromo) {
       discountAmount = (originalPrice * appliedPromo.discountPercentage) / 100;
@@ -90,7 +112,7 @@ const BookingCalendarPage: React.FC = () => {
 
   useEffect(() => {
     calculatePrice();
-  }, [numberOfNights, appliedPromo]);
+  }, [numberOfNights, appliedPromo, calendarData, selectedDates]);
 
   // Handle date: toggle / add / remove
   const handleDateToggle = (dates: Date[]) => {
@@ -103,10 +125,12 @@ const BookingCalendarPage: React.FC = () => {
 
   // Handle date click in multi-select mode with contiguous logic
   const handleDateClickInMultiSelect = (date: Date) => {
-    console.log('[handleDateClickInMultiSelect] clicked date:', format(date, 'yyyy-MM-dd'));
-    console.log('[handleDateClickInMultiSelect] current selectedDates:', selectedDates.map(d => format(d, 'yyyy-MM-dd')));
-
     const dateStr = format(date, 'yyyy-MM-dd');
+    console.log('[handleDateClickInMultiSelect] ===== CLICK START =====');
+    console.log('[handleDateClickInMultiSelect] clicked date:', dateStr);
+    console.log('[handleDateClickInMultiSelect] current selectedDates:', selectedDates.map(d => format(d, 'yyyy-MM-dd')));
+    console.log('[handleDateClickInMultiSelect] pendingDateToAdd:', pendingDateToAdd ? format(pendingDateToAdd, 'yyyy-MM-dd') : null);
+    console.log('[handleDateClickInMultiSelect] showConfirmModal:', showConfirmModal);
 
     // If date is already selected, remove it
     const isSelected = selectedDates.some(d => format(d, 'yyyy-MM-dd') === dateStr);
@@ -128,6 +152,7 @@ const BookingCalendarPage: React.FC = () => {
     const lastDate = sorted[sorted.length - 1];
 
     const dayDifference = Math.abs(date.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+    console.log('[handleDateClickInMultiSelect] dayDifference:', dayDifference, 'lastDate:', format(lastDate, 'yyyy-MM-dd'));
 
     // If contiguous (within 1 day), add to selection
     if (dayDifference === 1) {
@@ -137,12 +162,13 @@ const BookingCalendarPage: React.FC = () => {
     }
 
     // If not contiguous, show confirmation modal to replace selection
-    console.log('[handleDateClickInMultiSelect] date is not contiguous, showing confirm modal');
+    console.log('[handleDateClickInMultiSelect] date is not contiguous, showing confirm modal for:', dateStr);
     setPendingDateToAdd(date);
     setShowConfirmModal(true);
   };
 
   const handleConfirmReplace = () => {
+    console.log('[handleConfirmReplace] confirmed, pendingDateToAdd:', pendingDateToAdd ? format(pendingDateToAdd, 'yyyy-MM-dd') : null);
     if (pendingDateToAdd) {
       setSelectedDates([pendingDateToAdd]);
     }
@@ -151,6 +177,7 @@ const BookingCalendarPage: React.FC = () => {
   };
 
   const handleCancelReplace = () => {
+    console.log('[handleCancelReplace] cancelled, keeping current selection');
     setShowConfirmModal(false);
     setPendingDateToAdd(null);
   };
@@ -378,7 +405,7 @@ const BookingCalendarPage: React.FC = () => {
                 {derivedCheckIn && derivedCheckOut ? (
                   <>
                     <div className="flex justify-between text-primary-700">
-                      <span>IDR {basePrice.toLocaleString()} × {numberOfNights} malam</span>
+                      <span>IDR {(pricing.originalPrice / numberOfNights).toLocaleString(undefined, { maximumFractionDigits: 0 })} × {numberOfNights} malam</span>
                       <span>IDR {pricing.originalPrice.toLocaleString()}</span>
                     </div>
                     {appliedPromo && (

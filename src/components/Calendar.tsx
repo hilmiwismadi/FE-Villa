@@ -62,6 +62,17 @@ const Calendar: React.FC<CalendarProps> = ({
   const effectiveBookedDates = [...bookedDates, ...getBookedDatesFromAPI()];
   const effectiveBlockedDates = [...blockedDates, ...getBlockedDatesFromAPI()];
 
+  // Format price: below 1jt (1,000,000) shows as K, above shows as jt
+  const formatPrice = (price: number): string => {
+    if (price >= 1000000) {
+      // 1jt and above
+      return `${(price / 1000000).toFixed(1)}jt`;
+    } else {
+      // Below 1jt, show as K (ribu/kilo)
+      return `${(price / 1000).toFixed(0)}K`;
+    }
+  };
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -86,7 +97,11 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const isDateInMultiSelect = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
+    const result = selectedDatesList.some(d => format(d, 'yyyy-MM-dd') === dateStr);
+    if (result) {
+      console.log('[Calendar isDateInMultiSelect] date selected:', dateStr, 'selectedDatesList:', selectedDatesList.map(d => format(d, 'yyyy-MM-dd')));
+    }
+    return result;
   };
 
   const isDateSelected = (date: Date) => {
@@ -231,7 +246,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 <span>{format(date, 'd')}</span>
                 {price && !disabled && (
                   <span className="text-xs text-primary-500 mt-1">
-                    {(price / 1000000).toFixed(1)}jt
+                    {formatPrice(price)}
                   </span>
                 )}
               </div>
@@ -255,7 +270,7 @@ const Calendar: React.FC<CalendarProps> = ({
               <span>{format(date, 'd')}</span>
               {price && !disabled && (
                 <span className="text-xs mt-1">
-                  {(price / 1000000).toFixed(1)}jt
+                  {formatPrice(price)}
                 </span>
               )}
             </button>

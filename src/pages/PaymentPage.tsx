@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { createOrder, confirmPayment, getOrder, ApiError } from '../services/orderService';
+import { confirmPayment, getOrder, ApiError } from '../services/orderService';
 import type { OrderResponse } from '../services/orderService';
 
 const PaymentPage: React.FC = () => {
@@ -12,16 +11,12 @@ const PaymentPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const {
     dateRange,
-    formData,
-    appliedPromo,
     setPricing,
     resetBooking,
   } = useBooking();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [orderResponse, setOrderResponse] = useState<OrderResponse | null>(null);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [createOrderError, setCreateOrderError] = useState<string | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
@@ -36,79 +31,32 @@ const PaymentPage: React.FC = () => {
     }
   }, [hasValidBooking, localePath, navigate]);
 
-  // Create order on mount if we don't have an orderId
+  // Fetch order on mount if we have an orderId in URL
   useEffect(() => {
-    if (!hasValidBooking) return;
+    if (!hasValidBooking || !orderId) return;
 
-    if (orderId) {
-      // If we have an orderId, fetch existing order
-      const fetchOrder = async () => {
-        try {
-          const response = await getOrder(orderId);
-          setOrderResponse(response);
-        } catch (error) {
-          if (error instanceof ApiError) {
-            setCreateOrderError(error.message);
-          } else {
-            setCreateOrderError('Failed to load order details');
-          }
+    const fetchOrder = async () => {
+      try {
+        const response = await getOrder(orderId);
+        setOrderResponse(response);
+
+        // Update pricing with actual values from API response
+        setPricing({
+          originalPrice: response.subtotal + response.discountAmount,
+          discountAmount: response.discountAmount,
+          finalPrice: response.totalAmount,
+        });
+      } catch (error) {
+        if (error instanceof ApiError) {
+          setCreateOrderError(error.message);
+        } else {
+          setCreateOrderError('Failed to load order details');
         }
-      };
-      fetchOrder();
-    } else {
-      // Create new order
-      const createNewOrder = async () => {
-        setIsCreatingOrder(true);
-        setCreateOrderError(null);
+      }
+    };
 
-        if (!dateRange.checkIn || !dateRange.checkOut) {
-          setCreateOrderError('Missing date range');
-          setIsCreatingOrder(false);
-          return;
-        }
-
-        // Parse checkInTime properly - format is "HH-HH" (e.g., "14-16")
-        const checkInHours = formData.checkInTime?.split('-') || ['14', '16'];
-        const estimatedCheckIn: '14-16' | '16-18' | '18-20' | '20-22' =
-          checkInHours[0] === '16' ? '16-18' :
-          checkInHours[0] === '18' ? '18-20' :
-          checkInHours[0] === '20' ? '20-22' : '14-16';
-
-        try {
-          const response = await createOrder({
-            guestName: formData.fullName || '',
-            guestPhone: formData.phone || '',
-            guestAddress: formData.address || '',
-            guestCount: Number(formData.numberOfGuests) || 1,
-            extraBeds: Number(formData.extraBed) || 0,
-            estimatedCheckIn,
-            checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'),
-            checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
-            promoCode: appliedPromo?.code || undefined,
-          });
-
-          setOrderResponse(response);
-
-          // Update pricing with actual values from API response
-          setPricing({
-            originalPrice: response.subtotal + response.discountAmount,
-            discountAmount: response.discountAmount,
-            finalPrice: response.totalAmount,
-          });
-        } catch (error) {
-          if (error instanceof ApiError) {
-            setCreateOrderError(error.message || 'Failed to create order');
-          } else {
-            setCreateOrderError('Failed to create order');
-          }
-        } finally {
-          setIsCreatingOrder(false);
-        }
-      };
-
-      createNewOrder();
-    }
-  }, [orderId, hasValidBooking, dateRange.checkIn, dateRange.checkOut, formData, appliedPromo?.code, setPricing]);
+    fetchOrder();
+  }, [orderId, hasValidBooking, setPricing]);
 
   // Early return for render (after all hooks)
   if (!hasValidBooking) {
@@ -124,7 +72,10 @@ const PaymentPage: React.FC = () => {
     try {
       await confirmPayment(orderResponse.orderId);
       setPaymentConfirmed(true);
-      setSubmitError(null);
+      setConfirmPaymentError(null);
+
+      // Clear sessionStorage after successful payment confirmation
+      resetBooking();
     } catch (error) {
       if (error instanceof ApiError) {
         setConfirmPaymentError(error.message || 'Failed to confirm payment');
@@ -163,14 +114,6 @@ const PaymentPage: React.FC = () => {
             >
               Go Back
             </button>
-          </div>
-        )}
-
-        {/* Creating Order Loading */}
-        {isCreatingOrder && (
-          <div className="bg-white p-8 shadow-sm mb-6 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-900"></div>
-            <p className="mt-4 text-primary-700">Creating your order...</p>
           </div>
         )}
 
@@ -301,16 +244,9 @@ const PaymentPage: React.FC = () => {
         {confirmPaymentError && (
           <div className="bg-red-50 border border-red-200 p-4 mb-6">
             <p className="text-red-700">{confirmPaymentError}</p>
-          </div>
-        )}
-
-        {/* Submit Error */}
-        {submitError && (
-          <div className="bg-red-50 border border-red-200 p-4 mb-6">
-            <p className="text-red-700">{submitError}</p>
             <button
-              onClick={() => setSubmitError(null)}
-              className="text-sm text-red-600 hover:text-red-800 underline"
+              onClick={() => setConfirmPaymentError(null)}
+              className="text-sm text-red-600 hover:text-red-800 underline mt-2"
             >
               Dismiss
             </button>

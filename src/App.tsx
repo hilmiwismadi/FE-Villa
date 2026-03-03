@@ -35,6 +35,7 @@ function App() {
             <Route path="book/form" element={<BookingFormPage />} />
             <Route path="book/review" element={<BookingReviewPage />} />
             <Route path="book/payment" element={<PaymentPage />} />
+            <Route path="book/payment/:orderId" element={<PaymentPage />} />
             <Route path="book/confirmation/:bookingId" element={<ConfirmationPage />} />
           </Route>
 
@@ -47,6 +48,7 @@ function App() {
             <Route path="book/form" element={<BookingFormPage />} />
             <Route path="book/review" element={<BookingReviewPage />} />
             <Route path="book/payment" element={<PaymentPage />} />
+            <Route path="book/payment/:orderId" element={<PaymentPage />} />
             <Route path="book/confirmation/:bookingId" element={<ConfirmationPage />} />
           </Route>
 

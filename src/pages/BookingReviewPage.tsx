@@ -1,21 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
+import { createOrder, type OrderResponse } from '../services/orderService';
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, lang } = useTranslation();
   const {
     dateRange, guestInfo, formData, appliedPromo, setAppliedPromo,
-    pricing, setPricing, promoCode, setPromoCode,
+    pricing, setPricing, promoCode, setPromoCode, setGuestInfo,
   } = useBooking();
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [orderResponse, setOrderResponse] = useState<OrderResponse | null>(null);
+  const orderCreatedRef = useRef(false); // Prevent duplicate API calls
 
   const numberOfNights = dateRange.checkIn && dateRange.checkOut
     ? differenceInDays(dateRange.checkOut, dateRange.checkIn)
@@ -35,6 +40,78 @@ const BookingReviewPage: React.FC = () => {
     }
     setPricing({ originalPrice, discountAmount, finalPrice: originalPrice - discountAmount });
   }, [numberOfNights, appliedPromo, setPricing]);
+
+  // Create order on mount if guestInfo has data but no orderId
+  useEffect(() => {
+    // Prevent duplicate API calls
+    if (orderCreatedRef.current) {
+      return;
+    }
+
+    // If guestInfo has orderId already, order was created (shouldn't happen in this flow)
+    if (guestInfo?.orderId || !dateRange.checkIn || !dateRange.checkOut) {
+      return;
+    }
+
+    // Create order on review page
+    const createOrderOnReview = async () => {
+      setCreatingOrder(true);
+      setOrderError('');
+
+      try {
+        if (!dateRange.checkIn || !dateRange.checkOut) {
+          throw new Error('Check-in and check-out dates are required');
+        }
+
+        const checkInTime = formData.checkInTime || '14:00 - 16:00';
+        const estimatedCheckIn: '14-16' | '16-18' | '18-20' | '20-22' =
+          checkInTime === '16:00 - 18:00' ? '16-18' :
+          checkInTime === '18:00 - 20:00' ? '18-20' :
+          checkInTime === '20:00 - 22:00' ? '20-22' : '14-16';
+
+        const orderData = {
+          guestName: formData.fullName || '',
+          guestPhone: formData.phone || '',
+          guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : '',
+          guestCount: Number(formData.numberOfGuests) || 1,
+          extraBeds: Number(formData.extraBed) || 0,
+          estimatedCheckIn,
+          checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'),
+          checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
+          promoCode: appliedPromo?.code || undefined,
+        };
+
+        const response: OrderResponse = await createOrder(orderData);
+        setOrderResponse(response);
+        orderCreatedRef.current = true; // Mark as created
+
+        // Update pricing with actual values from API response
+        setPricing({
+          originalPrice: response.subtotal + response.discountAmount,
+          discountAmount: response.discountAmount,
+          finalPrice: response.totalAmount,
+        });
+
+        // Update guestInfo with orderId
+        setGuestInfo({
+          ...formData,
+          orderId: response.orderId,
+          totalAmount: response.totalAmount,
+          paymentDeadline: response.paymentDeadline,
+        });
+      } catch (error) {
+        if (error instanceof ApiError) {
+          setOrderError(error.message || 'Failed to create order');
+        } else {
+          setOrderError('Failed to create order');
+        }
+      } finally {
+        setCreatingOrder(false);
+      }
+    };
+
+    createOrderOnReview();
+  }, []); // Empty deps - run only once on mount
 
   // Redirect if no booking data
   if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {
@@ -93,7 +170,11 @@ const BookingReviewPage: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    navigate(localePath('/book/payment'));
+    if (!orderResponse?.orderId) {
+      alert('Order not created yet. Please wait...');
+      return;
+    }
+    navigate(localePath(`/book/payment/${orderResponse.orderId}`));
   };
 
   return (
@@ -253,19 +334,28 @@ const BookingReviewPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Order Error */}
+        {orderError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
+            <p className="text-sm text-red-800">{orderError}</p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-4">
           <button
             onClick={() => navigate(localePath('/book/form'))}
             className="btn-secondary"
+            disabled={creatingOrder}
           >
             {t.booking.review.editBooking}
           </button>
           <button
             onClick={handleConfirm}
             className="btn-primary flex-1"
+            disabled={creatingOrder || !orderResponse}
           >
-            {t.booking.review.confirmPayment}
+            {creatingOrder ? 'Creating order...' : t.booking.review.confirmPayment}
           </button>
         </div>
       </div>

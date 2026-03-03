@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
-import { createOrder, type OrderResponse } from '../services/orderService';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,8 +24,6 @@ const BookingFormPage: React.FC = () => {
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');
   const [validatingPromo, setValidatingPromo] = useState(false);
-  const [creatingOrder, setCreatingOrder] = useState(false);
-  const [orderError, setOrderError] = useState('');
 
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
@@ -126,8 +123,7 @@ const BookingFormPage: React.FC = () => {
       return;
     }
 
-    // Check if formData.orderId = dateRange.checkIn dates match
-    // If not, clear stale orderId from previous booking
+    // Clear stale orderId from previous booking if dates don't match
     if (formData.orderId && derivedCheckIn && derivedCheckOut) {
       const guestDateStr = format(derivedCheckIn, 'yyyy-MM-dd');
       if (!formData.orderId.startsWith(guestDateStr) && !formData.orderId.includes(guestDateStr)) {
@@ -138,63 +134,17 @@ const BookingFormPage: React.FC = () => {
       }
     }
 
-    setCreatingOrder(true);
-    setOrderError('');
+    // Just save form data to context, navigate to review
+    // Order will be created on review page
+    setGuestInfo({
+      ...formData,
+    });
 
-    try {
-      // Map check-in time to API format
-      const timeMap: Record<string, '14-16' | '16-18' | '18-20' | '20-22'> = {
-        '14:00 - 16:00': '14-16',
-        '16:00 - 18:00': '16-18',
-        '18:00 - 20:00': '18-20',
-        '20:00 - 22:00': '20-22',
-      };
-
-      const estimatedCheckIn = timeMap[formData.checkInTime] || '14-16';
-
-      const orderData = {
-        guestName: formData.fullName,
-        guestPhone: formData.phone,
-        guestAddress: `${formData.address}, ${formData.city}, ${formData.province}`,
-        guestCount: Number(formData.numberOfGuests) || 1,
-        extraBeds: typeof formData.extraBed === 'number' ? formData.extraBed : Number(formData.extraBed || 0),
-        estimatedCheckIn,
-        checkInDate: format(derivedCheckIn, 'yyyy-MM-dd'),
-        checkOutDate: format(derivedCheckOut, 'yyyy-MM-dd'),
-        promoCode: appliedPromo ? appliedPromo.code : undefined,
-      };
-
-      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
-      console.log('extraBeds value:', orderData.extraBeds, 'type:', typeof orderData.extraBeds);
-      console.log('guestCount value:', orderData.guestCount, 'type:', typeof orderData.guestCount);
-
-      const response: OrderResponse = await createOrder(orderData);
-
-      console.log('Order created successfully:', response.orderId);
-      console.log('Order status:', response.status);
-
-      // Store order ID in context for payment page
-      setGuestInfo({
-        ...formData,
-        orderId: response.orderId,
-        totalAmount: response.totalAmount,
-        paymentDeadline: response.paymentDeadline,
-      });
-
-      navigate(localePath('/book/review'));
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setOrderError(error.message || 'Failed to create order');
-      } else {
-        setOrderError('Failed to create order. Please try again.');
-      }
-    } finally {
-      setCreatingOrder(false);
-    }
+    navigate(localePath('/book/review'));
   };
 
   const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
-  const nightCount = selectedDates.length - 1;
+  const nightCount = selectedDates.length;
 
   return (
     <div className="section-padding bg-primary-50">
@@ -401,25 +351,16 @@ const BookingFormPage: React.FC = () => {
               <button
                 onClick={() => navigate(localePath('/book/calendar'))}
                 className="btn-secondary"
-                disabled={creatingOrder}
               >
                 {t.booking.form.back}
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={creatingOrder}
                 className="btn-primary flex-1"
               >
-                {creatingOrder ? 'Creating order...' : t.booking.form.reviewBooking}
+                {t.booking.form.reviewBooking}
               </button>
             </div>
-
-            {/* Order Error */}
-            {orderError && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded">
-                <p className="text-sm text-red-800">{orderError}</p>
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}
