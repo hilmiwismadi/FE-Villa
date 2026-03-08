@@ -4,7 +4,7 @@ import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
-import { createOrder, type OrderResponse } from '../services/orderService';
+import { createOrder, getOrder, type OrderResponse } from '../services/orderService';
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,8 +35,49 @@ const BookingReviewPage: React.FC = () => {
       return;
     }
 
-    // If guestInfo has orderId already, order was created (shouldn't happen in this flow)
-    if (guestInfo?.orderId || !dateRange.checkIn || !dateRange.checkOut) {
+    // If guestInfo has orderId already, fetch the existing order details
+    if (guestInfo?.orderId) {
+      const fetchExistingOrder = async () => {
+        setCreatingOrder(true);
+        setOrderError('');
+
+        try {
+          const existingOrder = await getOrder(guestInfo.orderId);
+          setOrderResponse(existingOrder);
+          orderCreatedRef.current = true;
+
+          // Update pricing with actual values from existing order
+          setPricing({
+            originalPrice: existingOrder.subtotal + existingOrder.discountAmount,
+            discountAmount: existingOrder.discountAmount,
+            finalPrice: existingOrder.totalAmount,
+          });
+
+          // Update guestInfo with existing order details
+          setGuestInfo({
+            ...formData,
+            ...guestInfo,
+            orderId: existingOrder.orderId,
+            totalAmount: existingOrder.totalAmount,
+            paymentDeadline: existingOrder.paymentDeadline,
+          });
+        } catch (error) {
+          if (error instanceof ApiError) {
+            setOrderError(error.message || 'Failed to load existing order');
+          } else {
+            setOrderError('Failed to load existing order');
+          }
+        } finally {
+          setCreatingOrder(false);
+        }
+      };
+
+      fetchExistingOrder();
+      return;
+    }
+
+    // If no dates selected, return
+    if (!dateRange.checkIn || !dateRange.checkOut) {
       return;
     }
 
@@ -68,6 +109,8 @@ const BookingReviewPage: React.FC = () => {
           promoCode: appliedPromo?.code || undefined,
         };
 
+        console.log('[BookingReviewPage] Creating order via POST /order/create:', orderData);
+
         const response: OrderResponse = await createOrder(orderData);
         setOrderResponse(response);
         orderCreatedRef.current = true; // Mark as created
@@ -88,7 +131,19 @@ const BookingReviewPage: React.FC = () => {
         });
       } catch (error) {
         if (error instanceof ApiError) {
-          setOrderError(error.message || 'Failed to create order');
+          // Handle 409 conflict - dates not available or phone number conflict
+          if (error.status === 409) {
+            console.error('[BookingReviewPage] 409 Conflict Error from POST /order/create:', error);
+            console.error('[BookingReviewPage] Error Details:', error.data);
+            console.error('[BookingReviewPage] Request Data:', orderData);
+
+            // This could be due to phone number conflict (BE issue) or actual date availability
+            setOrderError('Unable to create order. This might be because your phone number has been used before or the dates are not available. Please try again or contact support.');
+          } else if (error.status === 400) {
+            setOrderError('Invalid booking data. Please check your information and try again.');
+          } else {
+            setOrderError(error.message || 'Failed to create order');
+          }
         } else {
           setOrderError('Failed to create order');
         }
@@ -323,8 +378,40 @@ const BookingReviewPage: React.FC = () => {
 
         {/* Order Error */}
         {orderError && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
-            <p className="text-sm text-red-800">{orderError}</p>
+          <div className="mb-4 p-6 bg-red-50 border border-red-200 rounded">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm text-red-800 font-medium mb-3">{orderError}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setOrderError('');
+                      setCreatingOrder(false);
+                      // Reset the ref to allow retry
+                      orderCreatedRef.current = false;
+                    }}
+                    className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => navigate(localePath('/book/calendar'))}
+                    className="px-3 py-2 bg-white text-red-600 border border-red-300 text-sm rounded hover:bg-red-50 transition-colors"
+                  >
+                    Select Different Dates
+                  </button>
+                  <button
+                    onClick={() => navigate(localePath('/book/form'))}
+                    className="px-3 py-2 bg-white text-red-600 border border-red-300 text-sm rounded hover:bg-red-50 transition-colors"
+                  >
+                    Edit Guest Info
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -340,7 +427,7 @@ const BookingReviewPage: React.FC = () => {
           <button
             onClick={handleConfirm}
             className="btn-primary flex-1"
-            disabled={creatingOrder || !orderResponse}
+            disabled={creatingOrder || !orderResponse || !!orderError}
           >
             {creatingOrder ? 'Creating order...' : t.booking.review.confirmPayment}
           </button>

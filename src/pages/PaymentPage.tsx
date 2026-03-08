@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
@@ -21,53 +21,98 @@ const PaymentPage: React.FC = () => {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState(false);
 
   // Check if booking data is valid
   const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
 
-  // Redirect if no booking data
-  useEffect(() => {
-    if (!hasValidBooking) {
-      navigate(localePath('/book/calendar'));
-    }
-  }, [hasValidBooking, localePath, navigate]);
+  // Redirect if no booking data (only on initial mount)
+  // Note: We use a ref to prevent this from running again after resetBooking
+  const hasMountedRef = React.useRef(false);
+
+  // Track if user has confirmed payment (to prevent redirect loop)
+  const paymentConfirmedRef = React.useRef(false);
+
+  // Track if we're currently fetching to prevent double-invocation in React 18 strict mode
+  const isFetchingRef = React.useRef(false);
 
   // Fetch order on mount if we have an orderId in URL
   useEffect(() => {
-    if (!hasValidBooking || !orderId) return;
+    console.log('[PaymentPage] useEffect RUNNING =================================');
+    console.log('[PaymentPage] Current window.location.pathname:', window.location.pathname);
+    console.log('[PaymentPage] hasValidBooking:', hasValidBooking);
+    console.log('[PaymentPage] orderId:', orderId);
+    console.log('[PaymentPage] hasMountedRef.current:', hasMountedRef.current);
+    console.log('[PaymentPage] dateRange:', dateRange);
 
-    const fetchOrder = async () => {
-      try {
-        const response = await getOrder(orderId);
-        setOrderResponse(response);
+    // Mark as mounted to prevent redirect loop
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      console.log('[PaymentPage] First mount - marking as mounted');
+    }
 
-        // Update pricing with actual values from API response
-        setPricing({
-          originalPrice: response.subtotal + response.discountAmount,
-          discountAmount: response.discountAmount,
-          finalPrice: response.totalAmount,
-        });
-      } catch (error) {
-        if (error instanceof ApiError) {
-          setCreateOrderError(error.message);
-        } else {
-          setCreateOrderError('Failed to load order details');
-        }
+    // Fetch order if we have an orderId, regardless of booking state
+    if (orderId) {
+      if (isFetchingRef.current) {
+        console.log('[PaymentPage] ⚠️ DUPLICATE INVOCATION - Already fetching, skipping!');
+        return;
       }
-    };
+      console.log('[PaymentPage] Fetching order...');
+      isFetchingRef.current = true;
+      setLoadingOrder(true);
+      console.log('[PaymentPage] Loading state set to true');
+      const fetchOrder = async () => {
+        try {
+          const response = await getOrder(orderId);
+          console.log('[PaymentPage] ✅ Order fetched:', response);
+          console.log('[PaymentPage] Order status:', response.status);
+          setOrderResponse(response);
+          setLoadingOrder(false);
+          isFetchingRef.current = false;
 
-    fetchOrder();
-  }, [orderId, hasValidBooking, setPricing]);
+          // Update pricing with actual values from API response
+          setPricing({
+            originalPrice: response.subtotal + response.discountAmount,
+            discountAmount: response.discountAmount,
+            finalPrice: response.totalAmount,
+          });
+        } catch (error) {
+          console.error('[PaymentPage] Fetch order error:', error);
+          setLoadingOrder(false);
+          isFetchingRef.current = false;
+          if (error instanceof ApiError) {
+            setCreateOrderError(error.message);
+          } else {
+            setCreateOrderError('Failed to load order details');
+          }
+        }
+      };
+
+      fetchOrder();
+    } else {
+      console.log('[PaymentPage] No orderId available, skipping fetch');
+    }
+  }, [orderId, setPricing, navigate, localePath]);
 
   // Early return for render (after all hooks)
-  if (!hasValidBooking) {
-    return null;
-  }
+  // Remove hasValidBooking check to prevent blank page - show page even if booking data is cleared
+  // const if (!hasValidBooking) {
+  //   return null;
+  // }
 
   const handleConfirmPayment = async () => {
-    if (!orderResponse?.orderId) return;
+    console.log('[PaymentPage] handleConfirmPayment called');
+    console.log('[PaymentPage] orderResponse:', orderResponse);
+    console.log('[PaymentPage] transferConfirmed:', transferConfirmed);
+    console.log('[PaymentPage] hasValidBooking:', hasValidBooking);
+
+    if (!orderResponse?.orderId) {
+      console.log('[PaymentPage] Returning - no orderId');
+      return;
+    }
     if (!transferConfirmed) {
       alert('Mohon centang kotak "Saya sudah transfer" sebelum mengirim pembayaran.');
+      console.log('[PaymentPage] Returning - transfer not confirmed');
       return;
     }
 
@@ -75,13 +120,22 @@ const PaymentPage: React.FC = () => {
     setConfirmPaymentError(null);
 
     try {
+      console.log('[PaymentPage] Calling confirmPayment API with orderId:', orderResponse.orderId);
       await confirmPayment(orderResponse.orderId);
-      setPaymentConfirmed(true);
-      setConfirmPaymentError(null);
+      console.log('[PaymentPage] confirmPayment API succeeded');
 
-      // Clear sessionStorage after successful payment confirmation
-      resetBooking();
+      // Set payment confirmed flag
+      paymentConfirmedRef.current = true;
+
+      // Navigate to booking submission page after successful confirmation
+      const targetPath = localePath(`/book/confirmation/${orderResponse.orderId}`);
+      console.log('[PaymentPage] Current path:', window.location.pathname);
+      console.log('[PaymentPage] Target path:', targetPath);
+      console.log('[PaymentPage] Navigating to confirmation page...');
+      navigate(targetPath);
+      console.log('[PaymentPage] Navigation called');
     } catch (error) {
+      console.error('[PaymentPage] confirmPayment API error:', error);
       if (error instanceof ApiError) {
         setConfirmPaymentError(error.message || 'Failed to confirm payment');
       } else {
@@ -109,8 +163,16 @@ const PaymentPage: React.FC = () => {
       <div className="container-custom max-w-4xl">
         <h1 className="text-4xl font-serif text-primary-900 mb-8">{t.booking.payment.title}</h1>
 
-        {/* Create Order Error */}
-        {createOrderError && (
+        {/* Loading State */}
+        {loadingOrder && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-900"></div>
+            <p className="ml-4 text-primary-700">Loading order details...</p>
+          </div>
+        )}
+
+        {/* Order Fetch Error */}
+        {createOrderError && !loadingOrder && (
           <div className="bg-red-50 border border-red-200 p-4 mb-6">
             <p className="text-red-700">{createOrderError}</p>
             <button
@@ -288,26 +350,17 @@ const PaymentPage: React.FC = () => {
               </label>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => {
-                  resetBooking();
-                  navigate(localePath('/book/calendar'));
-                }}
-                className="btn-secondary"
-                disabled={isSubmitting}
-              >
-                {t.booking.payment.back}
-              </button>
-              <button
-                onClick={handleConfirmPayment}
-                className="btn-gold flex-1"
-                disabled={isSubmitting || !transferConfirmed}
-              >
-                {isSubmitting ? 'Confirming...' : t.booking.payment.submitBooking}
-              </button>
-            </div>
+            <button
+              onClick={handleConfirmPayment}
+              className={`w-full ${
+                isSubmitting || !transferConfirmed
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'btn-gold'
+              }`}
+              disabled={isSubmitting || !transferConfirmed}
+            >
+              {isSubmitting ? 'Confirming...' : t.booking.payment.submitBooking}
+            </button>
           </div>
         )}
 

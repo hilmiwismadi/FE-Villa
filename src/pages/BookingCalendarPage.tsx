@@ -12,6 +12,9 @@ import { validatePromo } from '../services/promoService';
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, dateFnsLocale } = useTranslation();
+
+  console.log('[BookingCalendarPage] Component mounted!');
+  console.log('[BookingCalendarPage] Current path:', window.location.pathname);
   const {
     setDateRange,
     selectedDates,

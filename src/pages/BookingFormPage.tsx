@@ -13,6 +13,7 @@ const BookingFormPage: React.FC = () => {
     formData,
     setFormData,
     setGuestInfo,
+    guestInfo,
     pricing,
     appliedPromo,
     setAppliedPromo,
@@ -138,6 +139,7 @@ const BookingFormPage: React.FC = () => {
     // Order will be created on review page
     setGuestInfo({
       ...formData,
+      ...(guestInfo || {}), // Preserve existing orderId and other fields from guestInfo
     });
 
     navigate(localePath('/book/review'));

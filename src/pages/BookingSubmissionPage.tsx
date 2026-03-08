@@ -14,6 +14,10 @@ const BookingSubmissionPage: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('[BookingSubmissionPage] Component mounted!');
+  console.log('[BookingSubmissionPage] Current path:', window.location.pathname);
+  console.log('[BookingSubmissionPage] Order ID from params:', orderId);
+
   // Fetch order details
   useEffect(() => {
     if (!orderId) {

@@ -9,6 +9,9 @@ const ActiveTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'calendar'>('card');
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Fetch active bookings on mount (both booked and check_in)
   const fetchActiveBookings = async () => {
@@ -97,10 +100,98 @@ const ActiveTab: React.FC = () => {
     }).format(new Date(dateStr));
   };
 
+  // Calendar view helpers
+  const getCalendarDays = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay(); // 0 = Sunday
+    const totalDays = lastDay.getDate();
+
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
+    }
+
+    // Add actual days
+    for (let day = 1; day <= totalDays; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      days.push({
+        date: dateStr,
+        bookings: activeBookings.filter(booking =>
+          booking.checkInDate <= dateStr && booking.checkOutDate > dateStr
+        ),
+      });
+    }
+
+    return days;
+  };
+
+  const getBookingColor = (status: string) => {
+    switch (status) {
+      case 'booked':
+        return 'bg-blue-500';
+      case 'check_in':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const handleDayClick = (dateStr: string, event: React.MouseEvent) => {
+    if (hoveredDate === dateStr) {
+      setHoveredDate(null);
+      setPopupPosition(null);
+    } else {
+      setHoveredDate(dateStr);
+      const rect = event.currentTarget.getBoundingClientRect();
+      setPopupPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 10
+      });
+    }
+  };
+
+  const getDayBookings = (dateStr: string) => {
+    return activeBookings.filter(booking =>
+      booking.checkInDate <= dateStr && booking.checkOutDate > dateStr
+    );
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-serif text-primary-900 mb-6">Active Bookings</h2>
-      <p className="text-primary-600 mb-6">Bookings awaiting check-in or currently checked in.</p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-serif text-primary-900 mb-1">Active Bookings</h2>
+          <p className="text-primary-600">Bookings awaiting check-in or currently checked in.</p>
+        </div>
+        <div className="flex items-center gap-2 bg-primary-50 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              viewMode === 'card'
+                ? 'bg-white text-primary-900 shadow-sm'
+                : 'text-primary-600 hover:text-primary-900'
+            }`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              viewMode === 'calendar'
+                ? 'bg-white text-primary-900 shadow-sm'
+                : 'text-primary-600 hover:text-primary-900'
+            }`}
+          >
+            Calendar
+          </button>
+        </div>
+      </div>
 
       {loading && (
         <div className="bg-white rounded-lg p-12 text-center">
@@ -120,12 +211,16 @@ const ActiveTab: React.FC = () => {
         </div>
       )}
 
-      {!loading && !error && activeBookings.length === 0 ? (
+      {!loading && !error && activeBookings.length === 0 && (
         <div className="bg-white rounded-lg p-12 text-center">
           <p className="text-primary-600">No active bookings at the moment.</p>
         </div>
-      ) : (
-        <div className="space-y-6">
+      )}
+
+      {!loading && !error && activeBookings.length > 0 && (
+        <>
+          {viewMode === 'card' && (
+            <div className="space-y-6">
           {activeBookings.map((booking) => (
             <div
               key={booking.orderId}
@@ -213,6 +308,148 @@ const ActiveTab: React.FC = () => {
               </div>
             </div>
           ))}
+            </div>
+          )}
+
+          {viewMode === 'calendar' && (
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="bg-primary-50 px-6 py-4">
+                <h3 className="text-lg font-semibold text-primary-900">
+                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </h3>
+              </div>
+              <div className="p-6">
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                    <div key={day} className="text-center text-sm font-medium text-primary-600 py-2">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {getCalendarDays().map((day, index) => (
+                    <div
+                      key={index}
+                      onClick={(e) => day && handleDayClick(day.date, e)}
+                      className={`min-h-24 border border-primary-100 rounded-lg p-2 cursor-pointer ${
+                        day ? 'hover:bg-primary-50 transition-colors' : 'bg-primary-50/30'
+                      }`}
+                    >
+                      {day ? (
+                        <>
+                          <div className="text-sm font-medium text-primary-900 mb-2">{day.date.split('-')[2]}</div>
+                          <div className="space-y-1">
+                            {day.bookings.map((booking) => (
+                              <div
+                                key={booking.orderId}
+                                className={`text-xs p-1 rounded text-white truncate ${getBookingColor(booking.status)} hover:opacity-90`}
+                                title={`${booking.guestName} - ${booking.orderId}`}
+                              >
+                                {booking.guestName}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-6 pt-4 border-t border-primary-200">
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                      <span className="text-sm text-primary-700">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-500 rounded"></div>
+                      <span className="text-sm text-primary-700">Check-in</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Popup Card for Calendar Details */}
+      {hoveredDate && popupPosition && (
+        <div
+          className="fixed bg-white rounded-lg shadow-xl p-4 z-50 min-w-80 max-w-sm"
+          style={{
+            left: `${popupPosition.x}px`,
+            top: `${popupPosition.y}px`,
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <h4 className="text-sm font-medium text-primary-600 mb-2">
+            {new Date(hoveredDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </h4>
+          <div className="space-y-2">
+            {getDayBookings(hoveredDate).map((booking) => (
+              <div key={booking.orderId} className="border border-primary-200 rounded p-3">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium text-primary-900">{booking.guestName}</span>
+                  <span className={`text-xs px-2 py-1 rounded ${getBookingColor(booking.status)}`}>
+                    {booking.status === 'booked' ? 'Booked' : 'Check-in'}
+                  </span>
+                </div>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-primary-600">Order:</span>
+                    <span className="text-primary-900 font-medium">{booking.orderId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-primary-600">Phone:</span>
+                    <span className="text-primary-900">{booking.guestPhone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-primary-600">Check-in:</span>
+                    <span className="text-primary-900">{formatDate(booking.checkInDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-primary-600">Check-out:</span>
+                    <span className="text-primary-900">{formatDate(booking.checkOutDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-primary-600">Total:</span>
+                    <span className="text-primary-900 font-medium">{formatCurrency(booking.totalAmount)}</span>
+                  </div>
+                </div>
+                {booking.status === 'booked' ? (
+                  <button
+                    onClick={() => {
+                      handleCheckIn(booking.orderId);
+                      setHoveredDate(null);
+                      setPopupPosition(null);
+                    }}
+                    disabled={processing === booking.orderId}
+                    className="mt-2 w-full btn-primary text-xs py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {processing === booking.orderId ? 'Processing...' : 'Check In Guest'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      handleComplete(booking.orderId);
+                      setHoveredDate(null);
+                      setPopupPosition(null);
+                    }}
+                    disabled={processing === booking.orderId}
+                    className="mt-2 w-full btn-primary text-xs py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {processing === booking.orderId ? 'Processing...' : 'Check Out Guest'}
+                  </button>
+                )}
+              </div>
+            ))}
+            {getDayBookings(hoveredDate).length === 0 && (
+              <p className="text-sm text-primary-600 text-center py-2">No bookings on this date</p>
+            )}
+          </div>
         </div>
       )}
     </div>

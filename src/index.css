@@ -30,6 +30,10 @@
     @apply bg-gold-600 text-white px-8 py-3 uppercase tracking-wider text-sm font-medium hover:bg-gold-700 transition-all duration-300;
   }
 
+  .btn-danger {
+    @apply bg-red-600 text-white px-8 py-3 uppercase tracking-wider text-sm font-medium hover:bg-red-700 transition-all duration-300;
+  }
+
   .input-field {
     @apply w-full px-4 py-3 border border-primary-300 focus:outline-none focus:border-primary-900 transition-colors duration-200;
   }
