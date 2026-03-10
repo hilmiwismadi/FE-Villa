@@ -89,17 +89,6 @@ const ActiveTab: React.FC = () => {
     }).format(new Date(dateStr));
   };
 
-  const formatDateTime = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(dateStr));
-  };
-
   // Calendar view helpers
   const getCalendarDays = () => {
     const today = new Date();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
@@ -18,7 +18,7 @@ const PaymentPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderResponse, setOrderResponse] = useState<OrderResponse | null>(null);
   const [createOrderError, setCreateOrderError] = useState<string | null>(null);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [paymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);

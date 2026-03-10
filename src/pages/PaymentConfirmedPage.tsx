@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { getOrder, ApiError } from '../services/orderService';
@@ -8,7 +9,7 @@ import type { OrderResponse } from '../services/orderService';
 
 const PaymentConfirmedPage: React.FC = () => {
   const navigate = useNavigate();
-  const { t, localePath, lang } = useTranslation();
+  const { localePath, lang } = useTranslation();
   const { orderId } = useParams<{ orderId: string }>();
   const { resetBooking } = useBooking();
 
@@ -17,7 +18,6 @@ const PaymentConfirmedPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
-  const [adminWhatsApp, setAdminWhatsApp] = useState('6281809252706');
   const [whatsappMessage, setWhatsappMessage] = useState('');
 
   // Redirect if no orderId
@@ -46,7 +46,7 @@ const PaymentConfirmedPage: React.FC = () => {
     fetchOrder();
   }, [orderId, navigate, localePath]);
 
-  const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
+  const dateLocale = lang === 'id' ? id : undefined;
 
   // Generate WhatsApp message
   const generateWhatsAppMessage = () => {
@@ -91,6 +91,11 @@ Mohon diproses segera untuk mengkonfirmasi pesanan saya. Terima kasih!`;
       alert('Mohon centang kotak "Saya sudah transfer dana ke rekening" sebelum mengirim pembayaran.');
       return;
     }
+
+    if (!orderData) return;
+
+    const checkIn = format(new Date(orderData.checkInDate), 'd MMMM yyyy', { locale: dateLocale });
+    const checkOut = format(new Date(orderData.checkOutDate), 'd MMMM yyyy', { locale: dateLocale });
 
     setWhatsappMessage(`Halo admin, saya mau konfirmasi pesanan saya:
 

@@ -42,7 +42,7 @@ const BookingReviewPage: React.FC = () => {
         setOrderError('');
 
         try {
-          const existingOrder = await getOrder(guestInfo.orderId);
+          const existingOrder = await getOrder(guestInfo.orderId || '');
           setOrderResponse(existingOrder);
           orderCreatedRef.current = true;
 
@@ -134,8 +134,6 @@ const BookingReviewPage: React.FC = () => {
           // Handle 409 conflict - dates not available or phone number conflict
           if (error.status === 409) {
             console.error('[BookingReviewPage] 409 Conflict Error from POST /order/create:', error);
-            console.error('[BookingReviewPage] Error Details:', error.data);
-            console.error('[BookingReviewPage] Request Data:', orderData);
 
             // This could be due to phone number conflict (BE issue) or actual date availability
             setOrderError('Unable to create order. This might be because your phone number has been used before or the dates are not available. Please try again or contact support.');
