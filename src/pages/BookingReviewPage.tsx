@@ -20,6 +20,15 @@ function createOrderDeduped(data: CreateOrderRequest): Promise<OrderResponse> {
   return requestPromise;
 }
 
+function normalizePhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0')) return digits;
+  if (digits.startsWith('62')) return `0${digits.slice(2)}`;
+  if (digits.startsWith('8')) return `0${digits}`;
+  return digits;
+}
+
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, lang } = useTranslation();
@@ -59,12 +68,13 @@ const BookingReviewPage: React.FC = () => {
           const existingOrder = await getOrder(guestInfo.orderId || '');
           setOrderResponse(existingOrder);
           orderCreatedRef.current = true;
+          const flatTotal = existingOrder.subtotal - existingOrder.discountAmount;
 
           // Update pricing with actual values from existing order
           setPricing({
             originalPrice: existingOrder.subtotal + existingOrder.discountAmount,
             discountAmount: existingOrder.discountAmount,
-            finalPrice: existingOrder.totalAmount,
+            finalPrice: flatTotal,
           });
 
           // Update guestInfo with existing order details
@@ -72,7 +82,7 @@ const BookingReviewPage: React.FC = () => {
             ...formData,
             ...guestInfo,
             orderId: existingOrder.orderId,
-            totalAmount: existingOrder.totalAmount,
+            totalAmount: flatTotal,
             paymentDeadline: existingOrder.paymentDeadline,
           });
         } catch (error) {
@@ -113,7 +123,7 @@ const BookingReviewPage: React.FC = () => {
 
         const orderData: CreateOrderRequest = {
           guestName: formData.fullName || '',
-          guestPhone: formData.phone || '',
+          guestPhone: normalizePhoneNumber(formData.phone || ''),
           guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : '',
           guestCount: Number(formData.numberOfGuests) || 1,
           extraBeds: Number(formData.extraBed) || 0,
@@ -128,19 +138,20 @@ const BookingReviewPage: React.FC = () => {
         const response: OrderResponse = await createOrderDeduped(orderData);
         setOrderResponse(response);
         orderCreatedRef.current = true; // Mark as created
+        const flatTotal = response.subtotal - response.discountAmount;
 
         // Update pricing with actual values from API response
         setPricing({
           originalPrice: response.subtotal + response.discountAmount,
           discountAmount: response.discountAmount,
-          finalPrice: response.totalAmount,
+          finalPrice: flatTotal,
         });
 
         // Update guestInfo with orderId
         setGuestInfo({
           ...formData,
           orderId: response.orderId,
-          totalAmount: response.totalAmount,
+          totalAmount: flatTotal,
           paymentDeadline: response.paymentDeadline,
         });
       } catch (error) {

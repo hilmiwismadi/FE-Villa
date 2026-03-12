@@ -23,6 +23,7 @@ const PaymentPage: React.FC = () => {
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [feUniqueCode, setFeUniqueCode] = useState<number>(0);
 
   // Check if booking data is valid
   const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
@@ -112,6 +113,22 @@ const PaymentPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [orderResponse?.paymentDeadline]);
 
+  useEffect(() => {
+    if (!orderResponse?.orderId) return;
+    const key = `fe-transfer-code-${orderResponse.orderId}`;
+    const existing = sessionStorage.getItem(key);
+    if (existing) {
+      const parsed = Number(existing);
+      if (Number.isInteger(parsed) && parsed >= 10 && parsed <= 99) {
+        setFeUniqueCode(parsed);
+        return;
+      }
+    }
+    const generatedCode = Math.floor(Math.random() * 90) + 10;
+    sessionStorage.setItem(key, String(generatedCode));
+    setFeUniqueCode(generatedCode);
+  }, [orderResponse?.orderId]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -174,6 +191,13 @@ const PaymentPage: React.FC = () => {
     navigator.clipboard.writeText(text);
     // TODO: Use toast notification instead of alert in production
   };
+
+  const transferBaseAmount = orderResponse
+    ? orderResponse.totalAmount - (orderResponse.uniqueCode || 0)
+    : 0;
+  const displayTransferAmount = transferBaseAmount > 0
+    ? transferBaseAmount + feUniqueCode
+    : (orderResponse?.totalAmount || 0);
 
   // Bank details - TODO: Fetch from API or use config
   const bankDetails = {
@@ -263,6 +287,9 @@ const PaymentPage: React.FC = () => {
                   ? 'Waktu habis. Silakan buat pemesanan baru.'
                   : 'Selesaikan pembayaran sebelum waktu habis'}
               </p>
+              <p className={`text-xs mt-1 ${timeLeft <= 60 ? 'text-red-500' : 'text-gold-600'}`}>
+                Timer berjalan sejak order dibuat (berdasarkan payment deadline dari server).
+              </p>
             </div>
             {timeLeft > 0 && (
               <div className={`text-right text-xs ${timeLeft <= 60 ? 'text-red-500' : 'text-gold-600'}`}>
@@ -329,14 +356,19 @@ const PaymentPage: React.FC = () => {
             <div className="pt-4 border-t border-primary-300">
               <p className="text-sm text-primary-600 mb-1">{t.booking.payment.transferAmount}</p>
               <div className="flex items-center justify-between">
-                <p className="text-2xl font-bold text-gold-600">IDR {orderResponse.totalAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gold-600">IDR {displayTransferAmount.toLocaleString()}</p>
                 <button
-                  onClick={() => copyToClipboard(orderResponse.totalAmount.toString())}
+                  onClick={() => copyToClipboard(displayTransferAmount.toString())}
                   className="text-sm text-gold-600 hover:text-gold-700"
                 >
                   {t.booking.payment.copy}
                 </button>
               </div>
+              {displayTransferAmount > 0 && (
+                <p className="text-xs text-primary-600 mt-1">
+                  Catatan: 2 digit terakhir ({String(displayTransferAmount).slice(-2)}) adalah kode pembeda transaksi.
+                </p>
+              )}
             </div>
 
             <div className="pt-4 border-t border-primary-300">

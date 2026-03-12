@@ -5,6 +5,17 @@ import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
 
+const normalizePhoneNumber = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0')) return digits;
+  if (digits.startsWith('62')) return `0${digits.slice(2)}`;
+  if (digits.startsWith('8')) return `0${digits}`;
+  return digits;
+};
+
+const isValidPhoneNumber = (value: string) => /^08\d{8,13}$/.test(value);
+
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, lang } = useTranslation();
@@ -25,6 +36,7 @@ const BookingFormPage: React.FC = () => {
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
@@ -38,6 +50,12 @@ const BookingFormPage: React.FC = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'phone') {
+      setPhoneError('');
+      setFormData({ ...formData, phone: value.replace(/\D/g, '').slice(0, 15) });
+      return;
+    }
 
     // Convert numeric fields to numbers
     if (name === 'numberOfGuests' || name === 'extraBed') {
@@ -53,7 +71,7 @@ const BookingFormPage: React.FC = () => {
     setValidatingPromo(true);
 
     // Validate with phone if available
-    const guestPhone = formData.phone || '';
+    const guestPhone = normalizePhoneNumber(formData.phone || '');
 
     try {
       const response = await promoValidatePromo({
@@ -124,6 +142,14 @@ const BookingFormPage: React.FC = () => {
       return;
     }
 
+    const normalizedPhone = normalizePhoneNumber(formData.phone || '');
+    if (!isValidPhoneNumber(normalizedPhone)) {
+      const invalidPhoneMessage = 'Nomor HP tidak valid. Gunakan format angka aktif (contoh: 08123456789).';
+      setPhoneError(invalidPhoneMessage);
+      alert(invalidPhoneMessage);
+      return;
+    }
+
     // Clear stale orderId from previous booking if dates don't match
     if (formData.orderId && derivedCheckIn && derivedCheckOut) {
       const guestDateStr = format(derivedCheckIn, 'yyyy-MM-dd');
@@ -140,6 +166,7 @@ const BookingFormPage: React.FC = () => {
     setGuestInfo({
       ...formData,
       ...(guestInfo || {}), // Preserve existing orderId and other fields from guestInfo
+      phone: normalizedPhone,
     });
 
     navigate(localePath('/book/review'));
@@ -206,8 +233,12 @@ const BookingFormPage: React.FC = () => {
                       onChange={handleFormChange}
                       className="input-field"
                       placeholder={t.booking.form.phonePlaceholder}
+                      inputMode="numeric"
+                      pattern="[0-9]+"
+                      maxLength={15}
                       required
                     />
+                    {phoneError && <p className="mt-2 text-xs text-red-600">{phoneError}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
@@ -331,20 +362,6 @@ const BookingFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Special Requests */}
-                <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">
-                    {t.booking.form.specialRequests} <span className="text-primary-400 font-normal">({t.booking.form.specialRequestsOptional})</span>
-                  </label>
-                  <textarea
-                    name="specialRequests"
-                    value={formData.specialRequests}
-                    onChange={handleFormChange}
-                    rows={3}
-                    className="input-field resize-none"
-                    placeholder={t.booking.form.specialRequestsPlaceholder}
-                  ></textarea>
-                </div>
               </form>
             </div>
 
