@@ -29,8 +29,10 @@ const BookingSubmissionPage: React.FC = () => {
     const checkIn = format(new Date(orderData.checkInDate), 'd MMMM yyyy');
     const checkOut = format(new Date(orderData.checkOutDate), 'd MMMM yyyy');
     const now = format(new Date(), 'd MMMM yyyy, HH:mm');
+    const orderLink = `${window.location.origin}${localePath(`/book/confirmation/${orderData.orderId}`)}`;
 
     return `Halo Admin,
+Link: ${orderLink}
 
 Saya ingin mengkonfirmasi pembayaran untuk pesanan Villa Sekipan:
 
@@ -106,23 +108,41 @@ Mohon diproses segera. Terima kasih.`;
     return null;
   }
 
+  const isRejected = orderData.status === 'rejected';
+  const isPendingStatus = orderData.status === 'pending' || orderData.status === 'in_transaction';
+  const isGreenStatus = !isRejected && !isPendingStatus;
+
   return (
     <div className="section-padding bg-primary-50">
       <div className="container-custom max-w-4xl">
         {/* Success Message - Simplified for mobile */}
-        <div className="bg-green-50 border border-green-200 p-6 md:p-8 rounded-lg text-center mb-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7l-4 4m0 0l0 0h14l-7 14" />
+        <div className={`${isRejected ? 'bg-red-50 border-red-300 ring-red-300' : isGreenStatus ? 'bg-green-50 border-green-300 ring-green-300' : 'bg-yellow-50 border-yellow-300 ring-yellow-300'} border-2 ring-4 p-6 md:p-8 rounded-lg text-center mb-6 animate-pulse`}>
+          <div className={`${isRejected ? 'bg-red-100' : isGreenStatus ? 'bg-green-100' : 'bg-yellow-100'} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
+            <svg className={`w-8 h-8 ${isRejected ? 'text-red-600' : isGreenStatus ? 'text-green-600' : 'text-yellow-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isRejected ? 'M6 18L18 6M6 6l12 12' : isGreenStatus ? 'M5 13l4 4L19 7' : 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'} />
             </svg>
           </div>
-          <h2 className="text-2xl md:text-3xl font-serif text-green-900 mb-2">Pembayaran Sedang Diverifikasi</h2>
-          <p className="text-base md:text-lg text-green-700 mb-4 max-w-2xl mx-auto">
-            Pesanan Anda telah dikirim ke admin villa
+          <h2 className={`text-2xl md:text-3xl font-serif mb-2 ${isRejected ? 'text-red-900' : isGreenStatus ? 'text-green-900' : 'text-yellow-900'}`}>
+            {isRejected ? 'Booking Ditolak' : isGreenStatus ? 'Booking Dikonfirmasi' : 'Pembayaran Sedang Diverifikasi'}
+          </h2>
+          <p className={`text-base md:text-lg mb-4 max-w-2xl mx-auto ${isRejected ? 'text-red-700' : isGreenStatus ? 'text-green-700' : 'text-yellow-700'}`}>
+            {isRejected
+              ? 'Pesanan Anda ditolak oleh admin villa'
+              : isGreenStatus
+                ? 'Pembayaran Anda sudah dikonfirmasi admin villa'
+                : 'Pesanan Anda telah dikirim ke admin villa'}
           </p>
-          <p className="text-sm md:text-base text-green-600">
-            Anda akan mendapat notifikasi WhatsApp setelah pembayaran dikonfirmasi
-          </p>
+          {isRejected ? (
+            <p className="text-sm md:text-base text-red-600">
+              Alasan penolakan: {orderData.rejectionReason || 'Tidak ada alasan yang diberikan.'}
+            </p>
+          ) : (
+            <p className={`text-sm md:text-base ${isGreenStatus ? 'text-green-600' : 'text-yellow-600'}`}>
+              {isPendingStatus
+                ? 'Anda akan mendapat notifikasi WhatsApp setelah pembayaran dikonfirmasi'
+                : 'Status pesanan Anda telah diperbarui'}
+            </p>
+          )}
         </div>
 
         {/* WhatsApp Button - Main Highlight, Above the Fold */}

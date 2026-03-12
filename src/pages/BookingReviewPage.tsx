@@ -4,7 +4,21 @@ import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
-import { createOrder, getOrder, type OrderResponse } from '../services/orderService';
+import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderService';
+
+const orderCreateInFlight = new Map<string, Promise<OrderResponse>>();
+
+function createOrderDeduped(data: CreateOrderRequest): Promise<OrderResponse> {
+  const requestKey = JSON.stringify(data);
+  const existingRequest = orderCreateInFlight.get(requestKey);
+  if (existingRequest) return existingRequest;
+
+  const requestPromise = createOrder(data).finally(() => {
+    orderCreateInFlight.delete(requestKey);
+  });
+  orderCreateInFlight.set(requestKey, requestPromise);
+  return requestPromise;
+}
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -97,7 +111,7 @@ const BookingReviewPage: React.FC = () => {
           checkInTime === '18:00 - 20:00' ? '18-20' :
           checkInTime === '20:00 - 22:00' ? '20-22' : '14-16';
 
-        const orderData = {
+        const orderData: CreateOrderRequest = {
           guestName: formData.fullName || '',
           guestPhone: formData.phone || '',
           guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : '',
@@ -111,7 +125,7 @@ const BookingReviewPage: React.FC = () => {
 
         console.log('[BookingReviewPage] Creating order via POST /order/create:', orderData);
 
-        const response: OrderResponse = await createOrder(orderData);
+        const response: OrderResponse = await createOrderDeduped(orderData);
         setOrderResponse(response);
         orderCreatedRef.current = true; // Mark as created
 
