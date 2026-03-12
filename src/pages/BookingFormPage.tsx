@@ -412,9 +412,10 @@ const BookingFormPage: React.FC = () => {
                         className="input-field flex-1 uppercase text-sm"
                       />
                       <button
+                        type="button"
                         onClick={handleApplyPromo}
                         className={`px-3 py-2 text-sm transition-colors ${
-                          validatingPromo
+                          !promoCode || validatingPromo
                             ? 'bg-primary-300 text-white cursor-not-allowed'
                             : 'bg-primary-900 text-white hover:bg-primary-800'
                         }`}

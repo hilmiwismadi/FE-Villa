@@ -22,6 +22,7 @@ const PaymentPage: React.FC = () => {
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   // Check if booking data is valid
   const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
@@ -93,6 +94,29 @@ const PaymentPage: React.FC = () => {
       console.log('[PaymentPage] No orderId available, skipping fetch');
     }
   }, [orderId, setPricing, navigate, localePath]);
+
+  // Countdown timer based on paymentDeadline from order
+  useEffect(() => {
+    if (!orderResponse?.paymentDeadline) return;
+    const deadline = new Date(orderResponse.paymentDeadline).getTime();
+    const update = () => {
+      const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      return remaining;
+    };
+    update();
+    const timer = setInterval(() => {
+      const remaining = update();
+      if (remaining <= 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [orderResponse?.paymentDeadline]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Early return for render (after all hooks)
   // Remove hasValidBooking check to prevent blank page - show page even if booking data is cleared
@@ -210,6 +234,42 @@ const PaymentPage: React.FC = () => {
                 <p><strong>Promo Code:</strong> {orderResponse.promoCode}</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Payment Countdown Timer */}
+        {orderResponse && !paymentConfirmed && timeLeft !== null && (
+          <div className={`p-4 mb-6 flex items-center gap-4 border ${
+            timeLeft <= 60
+              ? 'bg-red-50 border-red-300'
+              : 'bg-gold-50 border-gold-300'
+          }`}>
+            <div className={`flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center ${
+              timeLeft <= 60 ? 'bg-red-100' : 'bg-gold-100'
+            }`}>
+              <svg className={`w-7 h-7 ${timeLeft <= 60 ? 'text-red-600' : 'text-gold-700'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className={`text-xs font-medium uppercase tracking-wide mb-1 ${timeLeft <= 60 ? 'text-red-600' : 'text-gold-700'}`}>
+                Batas Waktu Pembayaran
+              </p>
+              <p className={`text-3xl font-mono font-bold leading-none ${timeLeft <= 60 ? 'text-red-700' : 'text-gold-800'}`}>
+                {formatTime(timeLeft)}
+              </p>
+              <p className={`text-xs mt-1 ${timeLeft <= 60 ? 'text-red-500' : 'text-gold-600'}`}>
+                {timeLeft <= 0
+                  ? 'Waktu habis. Silakan buat pemesanan baru.'
+                  : 'Selesaikan pembayaran sebelum waktu habis'}
+              </p>
+            </div>
+            {timeLeft > 0 && (
+              <div className={`text-right text-xs ${timeLeft <= 60 ? 'text-red-500' : 'text-gold-600'}`}>
+                <p className="font-medium">10 menit</p>
+                <p>batas waktu</p>
+              </div>
+            )}
           </div>
         )}
 

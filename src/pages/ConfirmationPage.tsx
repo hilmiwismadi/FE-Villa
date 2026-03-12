@@ -1,17 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { format } from 'date-fns';
+import { getOrder } from '../services/orderService';
 
 const ConfirmationPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
   const { dateRange } = useBooking();
   const { t, localePath, dateFnsLocale } = useTranslation();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
 
   // TODO: Replace with API fetch
   const adminWhatsApp = '6281809252706';
+
+  // Poll order status to check pending → booked transition
+  useEffect(() => {
+    if (!bookingId) return;
+    const fetchStatus = async () => {
+      try {
+        const order = await getOrder(bookingId);
+        setOrderStatus(order.status);
+      } catch (err) {
+        console.error('[ConfirmationPage] Failed to fetch order status:', err);
+      }
+    };
+    fetchStatus();
+    // Stop polling if already booked
+    const interval = setInterval(async () => {
+      try {
+        const order = await getOrder(bookingId);
+        setOrderStatus(order.status);
+        if (order.status === 'booked' || order.status === 'check_in' || order.status === 'completed') {
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error('[ConfirmationPage] Poll error:', err);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [bookingId]);
 
   const orderLink = `${window.location.origin}${localePath(`/book/confirmation/${bookingId}`)}`;
   const orderTimestamp = format(new Date(), "d MMMM yyyy, HH:mm", { locale: dateFnsLocale });
@@ -43,12 +72,33 @@ const ConfirmationPage: React.FC = () => {
     <div className="section-padding bg-primary-50 min-h-screen flex items-center">
       <div className="container-custom max-w-3xl">
         <div className="bg-white p-8 md:p-12 shadow-sm text-center">
-          {/* Success Icon */}
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
+          {/* Status Icon */}
+          {orderStatus === 'booked' || orderStatus === 'check_in' || orderStatus === 'completed' ? (
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          ) : (
+            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          )}
+
+          {/* Status Banner */}
+          {orderStatus === 'booked' || orderStatus === 'check_in' || orderStatus === 'completed' ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-6 py-3 inline-flex items-center gap-2 mb-6">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              <span className="text-green-800 font-semibold text-sm">Booking Dikonfirmasi</span>
+            </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-6 py-3 inline-flex items-center gap-2 mb-6">
+              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+              <span className="text-yellow-800 font-semibold text-sm">Pembayaran Sedang Diverifikasi...</span>
+            </div>
+          )}
 
           <h1 className="text-3xl md:text-4xl font-serif text-primary-900 mb-4">
             {t.booking.confirmation.title}
