@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { format } from 'date-fns';
@@ -9,7 +9,6 @@ const ConfirmationPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
   const { dateRange } = useBooking();
   const { t, localePath, dateFnsLocale } = useTranslation();
-  const [linkCopied, setLinkCopied] = useState(false);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
 
   // TODO: Replace with API fetch
@@ -60,12 +59,6 @@ const ConfirmationPage: React.FC = () => {
       .replace('{bookingId}', bookingId || '')
       .replace('{orderLink}', orderLink);
     window.open(`https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  const handleSaveLink = () => {
-    navigator.clipboard.writeText(orderLink);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   return (
