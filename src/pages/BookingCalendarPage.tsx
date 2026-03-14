@@ -382,13 +382,13 @@ const BookingCalendarPage: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-primary-600">Check-in</span>
                       <span className="text-primary-900 font-medium">
-                        {format(derivedCheckIn, 'd MMM yyyy', { locale: dateFnsLocale })}
+                        {derivedCheckIn.toLocaleDateString(dateFnsLocale.code === 'id' ? 'id-ID' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-primary-600">Check-out</span>
                       <span className="text-primary-900 font-medium">
-                        {format(derivedCheckOut, 'd MMM yyyy', { locale: dateFnsLocale })}
+                        {derivedCheckOut.toLocaleDateString(dateFnsLocale.code === 'id' ? 'id-ID' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </span>
                     </div>
                     <div className="pt-2 mt-2 bg-primary-50 rounded p-2">
@@ -396,7 +396,7 @@ const BookingCalendarPage: React.FC = () => {
                         <span className="font-medium">Menginap:</span> {numberOfNights} malam
                       </p>
                       <p className="text-xs text-primary-600 mt-1">
-                        {format(derivedCheckIn, 'd MMM', { locale: dateFnsLocale })} 12:00 - {format(derivedCheckOut, 'd MMM', { locale: dateFnsLocale })} 12:00 (WIB)
+                        {format(derivedCheckIn, 'EEEE, d MMMM yyyy', { locale: dateFnsLocale })} 14:00 - {format(derivedCheckOut, 'EEEE, d MMMM yyyy', { locale: dateFnsLocale })} 12:00 (WIB)
                       </p>
                     </div>
                   </div>

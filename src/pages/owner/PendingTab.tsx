@@ -28,6 +28,7 @@ const PendingTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'calendar'>('card');
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Fetch pending bookings on mount (both in_transaction and pending)
   const fetchPendingBookings = async () => {
@@ -89,6 +90,8 @@ Pembayaran Anda telah diverifikasi dan booking sudah disetujui. Terima kasih.`
       // Remove from list after successful approval
       setPendingBookings(prev => prev.filter(b => b.orderId !== confirmModal.orderId));
       setConfirmModal(null);
+      setSuccessMessage('Order berhasil diterima');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       if (err instanceof ApiError) {
         alert(`Failed to approve order: ${err.message}`);
@@ -132,6 +135,8 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
       setRejectModal(null);
       setRejectionReason('');
       setSelectedRejectionOption('');
+      setSuccessMessage('Order berhasil ditolak');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       if (err instanceof ApiError) {
         alert(`Failed to reject order: ${err.message}`);
@@ -614,9 +619,21 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
         </div>
       )}
 
+      {/* Success Message Popup */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-lg shadow-xl z-[100] animate-bounce">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-semibold">{successMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Approve Confirmation Modal */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setConfirmModal(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setConfirmModal(null)}>
           <div
             className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
@@ -676,7 +693,7 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
 
       {/* Rejection Modal */}
       {rejectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setRejectModal(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setRejectModal(null)}>
           <div
             className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
             onClick={(e) => e.stopPropagation()}

@@ -40,7 +40,7 @@ const Navigation: React.FC = () => {
               to={lang === 'id' ? '/en' : '/'}
               className="text-sm uppercase tracking-wider text-primary-500 hover:text-primary-900 transition-colors font-medium"
             >
-              {lang === 'id' ? 'EN' : 'ID'}
+              {lang === 'id' ? 'ID' : 'EN'}
             </Link>
           </div>
 
@@ -98,7 +98,7 @@ const Navigation: React.FC = () => {
                 className="text-sm uppercase tracking-wider text-primary-500 hover:text-primary-900 transition-colors font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                {lang === 'id' ? 'English' : 'Bahasa Indonesia'}
+                {lang === 'id' ? 'ID' : 'EN'}
               </Link>
             </div>
           </div>
