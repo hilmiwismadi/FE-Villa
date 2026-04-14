@@ -9,6 +9,7 @@ const PreviousTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
 
   const STATUS_OPTIONS = [
     { value: '', label: 'All Statuses' },
@@ -51,6 +52,20 @@ const PreviousTab: React.FC = () => {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const formatTimestamp = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatNullableTimestamp = (dateString: string | null) => {
+    return dateString ? formatTimestamp(dateString) : '-';
   };
 
   const fetchOrders = async () => {
@@ -121,12 +136,14 @@ const PreviousTab: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1100px]">
             <thead className="bg-primary-50">
               <tr>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Order ID</th>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Guest Name</th>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Guest Phone</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Transaction Timestamp</th>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Check-in</th>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Check-out</th>
                 <th className="text-left p-4 text-sm font-medium text-primary-700">Nights</th>
@@ -136,10 +153,15 @@ const PreviousTab: React.FC = () => {
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr key={order.orderId} className="border-t border-primary-100 hover:bg-primary-50">
+                <tr
+                  key={order.orderId}
+                  className="border-t border-primary-100 hover:bg-primary-50 cursor-pointer"
+                  onClick={() => setSelectedOrder(order)}
+                >
                   <td className="p-4 text-primary-900 font-medium">{order.orderId}</td>
                   <td className="p-4 text-primary-900">{order.guestName}</td>
                   <td className="p-4 text-primary-700">{order.guestPhone}</td>
+                  <td className="p-4 text-primary-700">{formatTimestamp(order.createdAt)}</td>
                   <td className="p-4 text-primary-700">{formatDate(order.checkInDate)}</td>
                   <td className="p-4 text-primary-700">{formatDate(order.checkOutDate)}</td>
                   <td className="p-4 text-primary-700">{order.nightCount}</td>
@@ -148,7 +170,8 @@ const PreviousTab: React.FC = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -177,6 +200,52 @@ const PreviousTab: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {selectedOrder && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-primary-100">
+              <h3 className="text-lg font-semibold text-primary-900">Order Detail</h3>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-primary-500 hover:text-primary-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <p><strong>Order ID:</strong> {selectedOrder.orderId}</p>
+              <p><strong>Status:</strong> {selectedOrder.status}</p>
+              <p><strong>Guest Name:</strong> {selectedOrder.guestName}</p>
+              <p><strong>Guest Phone:</strong> {selectedOrder.guestPhone}</p>
+              <p className="md:col-span-2"><strong>Guest Address:</strong> {selectedOrder.guestAddress}</p>
+              <p><strong>Guest Count:</strong> {selectedOrder.guestCount}</p>
+              <p><strong>Extra Beds:</strong> {selectedOrder.extraBeds}</p>
+              <p><strong>Check-in Date:</strong> {formatDate(selectedOrder.checkInDate)}</p>
+              <p><strong>Check-out Date:</strong> {formatDate(selectedOrder.checkOutDate)}</p>
+              <p><strong>Nights:</strong> {selectedOrder.nightCount}</p>
+              <p><strong>Estimated Check-in:</strong> {selectedOrder.estimatedCheckIn}</p>
+              <p><strong>Subtotal:</strong> {formatCurrency(selectedOrder.subtotal)}</p>
+              <p><strong>Discount:</strong> {formatCurrency(selectedOrder.discountAmount)}</p>
+              <p><strong>Unique Code:</strong> {selectedOrder.uniqueCode}</p>
+              <p><strong>Total:</strong> {formatCurrency(selectedOrder.totalAmount)}</p>
+              <p><strong>Transaction Timestamp:</strong> {formatTimestamp(selectedOrder.createdAt)}</p>
+              <p><strong>Payment Confirmed:</strong> {formatNullableTimestamp(selectedOrder.paymentConfirmedAt)}</p>
+              <p><strong>Payment Deadline:</strong> {formatNullableTimestamp(selectedOrder.paymentDeadline)}</p>
+              <p><strong>Last Updated:</strong> {formatTimestamp(selectedOrder.updatedAt)}</p>
+              {selectedOrder.rejectionReason && (
+                <p className="md:col-span-2"><strong>Rejection Reason:</strong> {selectedOrder.rejectionReason}</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
