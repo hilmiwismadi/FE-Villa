@@ -5,7 +5,7 @@
 
 import { ApiError } from './errors';
 
-const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://villa-promo.izcy.tech';
+const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://yutaka-promo.izcy.tech';
 
 // Common types
 export interface ValidatePromoRequest {
@@ -150,8 +150,14 @@ export async function applyPromo(data: ApplyPromoRequest): Promise<ApplyPromoRes
  * Helper to add auth header
  */
 function getAuthHeaders(): HeadersInit {
-  const auth = localStorage.getItem('auth');
-  return auth ? { Authorization: `Bearer ${auth}` } : {};
+  try {
+    const raw = localStorage.getItem('villa-auth');
+    if (!raw) return {};
+    const auth = JSON.parse(raw);
+    return auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 /**

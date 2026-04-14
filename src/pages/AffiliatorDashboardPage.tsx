@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const AffiliatorDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'codes' | 'bookings' | 'earnings' | 'marketing'>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   // Mock affiliator data
   const [affiliatorInfo] = useState({
@@ -214,6 +223,19 @@ const AffiliatorDashboardPage: React.FC = () => {
             <span>Marketing</span>
           </button>
         </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-primary-800 mt-auto">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-primary-200 hover:bg-primary-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="flex-1 text-left">Sign Out</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}

@@ -3,7 +3,7 @@
  * Base URL: http://localhost:4000 (dev) | http://<VPS_IP>:2470 (prod)
  */
 
-const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || 'https://villa-order.izcy.tech';
+const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';
@@ -200,9 +200,14 @@ export async function getPaymentStatus(orderId: string): Promise<PaymentStatusRe
  * Helper to add auth header
  */
 function getAuthHeaders(): HeadersInit {
-  // TODO: Implement proper auth context
-  const auth = localStorage.getItem('auth');
-  return auth ? { Authorization: `Bearer ${auth}` } : {};
+  try {
+    const raw = localStorage.getItem('villa-auth');
+    if (!raw) return {};
+    const auth = JSON.parse(raw);
+    return auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 /**
