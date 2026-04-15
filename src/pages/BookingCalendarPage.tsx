@@ -334,6 +334,7 @@ const BookingCalendarPage: React.FC = () => {
                 blockedDates={[]}
                 calendarData={calendarData}
                 onMonthChange={handleMonthChange}
+                hidePrices={true}
               />
 
               {derivedCheckIn && derivedCheckOut && (

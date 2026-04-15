@@ -10,6 +10,8 @@ const ConfirmationPage: React.FC = () => {
   const { dateRange } = useBooking();
   const { t, localePath, dateFnsLocale } = useTranslation();
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const [orderData, setOrderData] = useState<any>(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   // TODO: Replace with API fetch
   const adminWhatsApp = '6281809252706';
@@ -21,6 +23,7 @@ const ConfirmationPage: React.FC = () => {
       try {
         const order = await getOrder(bookingId);
         setOrderStatus(order.status);
+        setOrderData(order);
       } catch (err) {
         console.error('[ConfirmationPage] Failed to fetch order status:', err);
       }
@@ -31,6 +34,7 @@ const ConfirmationPage: React.FC = () => {
       try {
         const order = await getOrder(bookingId);
         setOrderStatus(order.status);
+        setOrderData(order);
         if (order.status === 'booked' || order.status === 'check_in' || order.status === 'completed') {
           clearInterval(interval);
         }
@@ -43,6 +47,76 @@ const ConfirmationPage: React.FC = () => {
 
   const orderLink = `${window.location.origin}${localePath(`/book/confirmation/${bookingId}`)}`;
   const orderTimestamp = format(new Date(), "d MMMM yyyy, HH:mm", { locale: dateFnsLocale });
+
+  // PDF generation function
+  const generatePDF = () => {
+    if (!orderData) return;
+
+    const pdfContent = `
+========================================
+BOOKING CONFIRMATION - VILLA SEKIPAN
+========================================
+
+ORDER DATA
+----------
+Order ID: ${orderData.orderId || bookingId}
+Nama Tamu: ${orderData.guestName || orderData.guest_name || 'N/A'}
+Nomor HP: ${orderData.guestPhone || orderData.guest_phone || 'N/A'}
+Email: ${orderData.guestEmail || orderData.guest_email || '-'}
+
+Check-in: ${orderData.checkInDate || orderData.check_in_date ? format(new Date(orderData.checkInDate || orderData.check_in_date), 'd MMMM yyyy', { locale: dateFnsLocale }) : '-'}
+Check-out: ${orderData.checkOutDate || orderData.check_out_date ? format(new Date(orderData.checkOutDate || orderData.check_out_date), 'd MMMM yyyy', { locale: dateFnsLocale }) : '-'}
+Durasi: ${orderData.nightCount || orderData.night_count || 0} malam
+Jumlah Tamu: ${orderData.guestCount || orderData.guest_count || 0} orang
+
+PAYMENT STATUS
+--------------
+Status: Booking Dikonfirmasi
+Total Pembayaran: IDR ${(orderData.totalAmount || 0).toLocaleString('id-ID')}
+Waktu Pesanan: ${orderTimestamp}
+
+========================================
+ATURAN MENGINAP DI VILLA SEKIPAN
+========================================
+
+1. Waktu Check-In & Check-Out
+   - Waktu Check-In: Mulai pukul 14.00 WIB
+   - Waktu Check-Out: Maksimal pukul 12.00 WIB
+   - Denda Keterlambatan: Beberapa villa memberlakukan denda hingga 50% dari harga sewa jika tamu melakukan check-out melebihi jam yang ditentukan
+
+2. Aturan Perilaku & Larangan Utama
+   Villa di area ini mayoritas adalah "Villa Keluarga" yang menerapkan aturan ketat terhadap pelanggaran hukum dan norma:
+   - Dilarang Keras: Membawa atau mengonsumsi minuman keras (alkohol) dan narkoba
+   - Larangan Asusila: Dilarang membawa pasangan yang bukan muhrim (no pacaran/mesum)
+   - Dilarang Merokok di Dalam: Merokok biasanya hanya diperbolehkan di area luar atau teras villa; pelanggaran dapat dikenakan denda
+
+3. Penggunaan Fasilitas Hiburan
+   - Jam Malam: Berlaku pukul 24.00 WIB untuk menjaga ketenangan lingkungan sekitar
+   - Karaoke: Penggunaan fasilitas karaoke keluarga biasanya dibatasi hingga pukul 23.30 WIB
+   - Larangan Sound Besar: Dilarang mengadakan acara dengan live music, DJ, organ tunggal, atau alat musik dengan big sound tanpa izin khusus
+
+4. Kapasitas & Identitas
+   - Identitas: Tamu wajib menunjukkan kartu identitas (KTP) saat proses registrasi/check-in
+   - Batas Kapasitas: Jumlah tamu tidak boleh melebihi kapasitas maksimal yang disepakati (misal 15-30 orang). Kelebihan jumlah tamu biasanya dikenakan biaya tambahan
+
+========================================
+Terima kasih telah memilih Villa Sekipan!
+Untuk pertanyaan lebih lanjut, hubungi:
+WhatsApp: 6281809252706
+========================================
+`;
+
+    // Create a simple text-based PDF download
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `booking-confirmation-${bookingId || 'N/A'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleConfirmOrder = () => {
     const checkInStr = dateRange.checkIn
@@ -82,6 +156,19 @@ const ConfirmationPage: React.FC = () => {
             </div>
           )}
 
+          {/* PDF Download Button - Only show when confirmed */}
+          {(orderStatus === 'booked' || orderStatus === 'check_in' || orderStatus === 'completed') && (
+            <button
+              onClick={generatePDF}
+              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-600 text-white text-xs font-bold rounded-lg hover:bg-primary-700 active:bg-primary-800 transition-colors mb-3"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download Bukti Booking
+            </button>
+          )}
+
           <h1 className="text-lg font-serif text-primary-900 mb-2">
             {t.booking.confirmation.title}
           </h1>
@@ -89,6 +176,17 @@ const ConfirmationPage: React.FC = () => {
           <p className="text-xs text-primary-700 mb-2">
             Order ID: <strong className="text-sm">{bookingId}</strong>
           </p>
+
+          {/* Show Rules Button */}
+          <button
+            onClick={() => setShowPdfModal(true)}
+            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-100 text-primary-700 text-xs font-bold rounded-lg hover:bg-primary-200 active:bg-primary-300 transition-colors mb-2"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Lihat Aturan Villa
+          </button>
 
           {/* Confirm Order via WhatsApp */}
           <button
@@ -100,6 +198,81 @@ const ConfirmationPage: React.FC = () => {
             </svg>
             Konfirmasi WhatsApp
           </button>
+        </div>
+      </div>
+
+      {/* Villa Rules Modal */}
+      {showPdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowPdfModal(false)}></div>
+          <div className="relative bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl rounded-lg">
+            <button
+              onClick={() => setShowPdfModal(false)}
+              className="absolute top-4 right-4 text-primary-400 hover:text-primary-900 transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-2xl font-serif text-primary-900 mb-6">Aturan Menginap di Villa Sekipan</h2>
+
+            <div className="space-y-6 text-sm text-primary-700">
+              <div className="border-l-4 border-gold-600 pl-4">
+                <h3 className="font-semibold text-primary-900 mb-2">1. Waktu Check-In & Check-Out</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Waktu Check-In:</strong> Mulai pukul 14.00 WIB</li>
+                  <li><strong>Waktu Check-Out:</strong> Maksimal pukul 12.00 WIB</li>
+                  <li><strong>Denda Keterlambatan:</strong> Beberapa villa memberlakukan denda hingga 50% dari harga sewa jika tamu melakukan check-out melebihi jam yang ditentukan</li>
+                </ul>
+              </div>
+
+              <div className="border-l-4 border-red-600 pl-4">
+                <h3 className="font-semibold text-primary-900 mb-2">2. Aturan Perilaku & Larangan Utama</h3>
+                <p className="mb-2 italic">Villa di area ini mayoritas adalah "Villa Keluarga" yang menerapkan aturan ketat terhadap pelanggaran hukum dan norma:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Dilarang Keras:</strong> Membawa atau mengonsumsi minuman keras (alkohol) dan narkoba</li>
+                  <li><strong>Larangan Asusila:</strong> Dilarang membawa pasangan yang bukan muhrim (no pacaran/mesum)</li>
+                  <li><strong>Dilarang Merokok di Dalam:</strong> Merokok biasanya hanya diperbolehkan di area luar atau teras villa; pelanggaran dapat dikenakan denda</li>
+                </ul>
+              </div>
+
+              <div className="border-l-4 border-blue-600 pl-4">
+                <h3 className="font-semibold text-primary-900 mb-2">3. Penggunaan Fasilitas Hiburan</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Jam Malam:</strong> Berlaku pukul 24.00 WIB untuk menjaga ketenangan lingkungan sekitar</li>
+                  <li><strong>Karaoke:</strong> Penggunaan fasilitas karaoke keluarga biasanya dibatasi hingga pukul 23.30 WIB</li>
+                  <li><strong>Larangan Sound Besar:</strong> Dilarang mengadakan acara dengan live music, DJ, organ tunggal, atau alat musik dengan big sound tanpa izin khusus</li>
+                </ul>
+              </div>
+
+              <div className="border-l-4 border-green-600 pl-4">
+                <h3 className="font-semibold text-primary-900 mb-2">4. Kapasitas & Identitas</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Identitas:</strong> Tamu wajib menunjukkan kartu identitas (KTP) saat proses registrasi/check-in</li>
+                  <li><strong>Batas Kapasitas:</strong> Jumlah tamu tidak boleh melebihi kapasitas maksimal yang disepakati (misal 15-30 orang). Kelebihan jumlah tamu biasanya dikenakan biaya tambahan</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowPdfModal(false)}
+                className="flex-1 px-4 py-2 border border-primary-300 text-primary-700 hover:bg-primary-50 rounded"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={generatePDF}
+                className="flex-1 px-4 py-2 bg-primary-900 text-white hover:bg-primary-800 rounded"
+              >
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </div>
     </div>

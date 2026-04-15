@@ -23,6 +23,10 @@ interface CalendarProps {
   calendarData?: CalendarDay[];
   /** Callback when month changes (for API fetching) */
   onMonthChange?: (month: string) => void;
+  /** Hide price display under dates */
+  hidePrices?: boolean;
+  /** Array of holiday dates to highlight */
+  holidayDates?: Date[];
 }
 
 const Calendar: React.FC<CalendarProps> = ({
@@ -37,7 +41,9 @@ const Calendar: React.FC<CalendarProps> = ({
   multiSelect = false,
   defaultMonth,
   calendarData,
-  onMonthChange
+  onMonthChange,
+  hidePrices = false,
+  holidayDates = []
 }) => {
   const [currentMonth, setCurrentMonth] = useState(defaultMonth ? parse(defaultMonth, 'yyyy-MM', new Date()) : new Date());
   const today = startOfToday();
@@ -93,6 +99,15 @@ const Calendar: React.FC<CalendarProps> = ({
     return effectiveBlockedDates.some(blockedDate =>
       format(blockedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
     );
+  };
+
+  const isWeekendOrHoliday = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday (0) or Saturday (6)
+    const isHoliday = holidayDates.some(holidayDate =>
+      format(holidayDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    );
+    return isWeekend || isHoliday;
   };
 
   const isDateInMultiSelect = (date: Date) => {
@@ -226,6 +241,7 @@ const Calendar: React.FC<CalendarProps> = ({
           const selected = isDateSelected(date);
           const inRange = isDateInRange(date);
           const disabled = isPast || booked || blocked;
+          const isWeekend = isWeekendOrHoliday(date);
 
           // Get price from API data
           const dateStr = format(date, 'yyyy-MM-dd');
@@ -241,10 +257,11 @@ const Calendar: React.FC<CalendarProps> = ({
                   ${disabled ? 'text-primary-300' : 'text-primary-900'}
                   ${isToday(date) ? 'border-2 border-gold-600' : ''}
                   ${booked || blocked ? 'bg-red-50 line-through' : ''}
+                  ${isWeekend && !disabled ? 'text-red-600 font-semibold' : ''}
                 `}
               >
                 <span>{format(date, 'd')}</span>
-                {price && !disabled && (
+                {price && !disabled && !hidePrices && (
                   <span className="text-xs text-primary-500 mt-1">
                     {formatPrice(price)}
                   </span>
@@ -265,10 +282,11 @@ const Calendar: React.FC<CalendarProps> = ({
                 ${inRange ? 'bg-primary-100' : ''}
                 ${isToday(date) && !selected ? 'border-2 border-gold-600' : ''}
                 ${booked || blocked ? 'bg-red-50 line-through' : ''}
+                ${isWeekend && !disabled && !selected ? 'text-red-600 font-semibold' : ''}
               `}
             >
               <span>{format(date, 'd')}</span>
-              {price && !disabled && (
+              {price && !disabled && !hidePrices && (
                 <span className="text-xs mt-1">
                   {formatPrice(price)}
                 </span>

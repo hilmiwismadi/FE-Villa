@@ -11,6 +11,7 @@ const PaymentPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const {
     dateRange,
+    pricing,
     setPricing,
     resetBooking,
   } = useBooking();
@@ -72,6 +73,24 @@ const PaymentPage: React.FC = () => {
           setLoadingOrder(false);
           isFetchingRef.current = false;
 
+          // Console log for pricing comparison
+          console.log('========================================');
+          console.log('PAYMENT PAGE PRICING COMPARISON');
+          console.log('========================================');
+          console.log('API Response Pricing:', {
+            subtotal: response.subtotal,
+            discountAmount: response.discountAmount,
+            totalAmount: response.totalAmount,
+            uniqueCode: response.uniqueCode,
+            calculatedOriginal: response.subtotal + response.discountAmount
+          });
+          console.log('FE Context Pricing (before update):', pricing);
+          console.log('Date Range:', {
+            checkIn: dateRange.checkIn ? dateRange.checkIn.toISOString() : null,
+            checkOut: dateRange.checkOut ? dateRange.checkOut.toISOString() : null
+          });
+          console.log('========================================');
+
           // Update pricing with actual values from API response
           setPricing({
             originalPrice: response.subtotal + response.discountAmount,
@@ -119,12 +138,12 @@ const PaymentPage: React.FC = () => {
     const existing = sessionStorage.getItem(key);
     if (existing) {
       const parsed = Number(existing);
-      if (Number.isInteger(parsed) && parsed >= 10 && parsed <= 99) {
+      if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 19) {
         setFeUniqueCode(parsed);
         return;
       }
     }
-    const generatedCode = Math.floor(Math.random() * 90) + 10;
+    const generatedCode = Math.floor(Math.random() * 19) + 1;
     sessionStorage.setItem(key, String(generatedCode));
     setFeUniqueCode(generatedCode);
   }, [orderResponse?.orderId]);

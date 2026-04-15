@@ -124,7 +124,7 @@ const BookingReviewPage: React.FC = () => {
         const orderData: CreateOrderRequest = {
           guestName: formData.fullName || '',
           guestPhone: normalizePhoneNumber(formData.phone || ''),
-          guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : '',
+          guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : `${formData.city || ''}, ${formData.province || ''}`,
           guestCount: Number(formData.numberOfGuests) || 1,
           extraBeds: Number(formData.extraBed) || 0,
           estimatedCheckIn,
@@ -133,7 +133,14 @@ const BookingReviewPage: React.FC = () => {
           promoCode: appliedPromo?.code || undefined,
         };
 
-        console.log('[BookingReviewPage] Creating order via POST /order/create:', orderData);
+        console.log('========================================');
+        console.log('BOOKING REVIEW PAYLOAD (FE -> API)');
+        console.log('========================================');
+        console.log('API Request Body (POST /order/create):', orderData);
+        console.log('Form Data Source:', formData);
+        console.log('Pricing Context:', pricing);
+        console.log('Applied Promo:', appliedPromo);
+        console.log('========================================');
 
         const response: OrderResponse = await createOrderDeduped(orderData);
         setOrderResponse(response);
@@ -342,6 +349,12 @@ const BookingReviewPage: React.FC = () => {
                 <span>{t.booking.review.basePrice.replace('{nights}', String(numberOfNights))}</span>
                 <span>IDR {pricing.originalPrice.toLocaleString()}</span>
               </div>
+              {guest.extraBed > 0 && (
+                <div className="flex justify-between text-primary-700">
+                  <span>Bed Tambahan ({guest.extraBed} × Rp100.000)</span>
+                  <span>IDR {(guest.extraBed * 100000).toLocaleString()}</span>
+                </div>
+              )}
               {appliedPromo && (
                 <div className="flex justify-between text-green-600">
                   <span>{t.booking.review.discount.replace('{code}', appliedPromo.code).replace('{percent}', String(appliedPromo.discountPercentage))}</span>
@@ -351,7 +364,7 @@ const BookingReviewPage: React.FC = () => {
               <div className="pt-3 border-t border-primary-200">
                 <div className="flex justify-between font-semibold text-xl text-primary-900">
                   <span>{t.booking.review.total}</span>
-                  <span>IDR {pricing.finalPrice.toLocaleString()}</span>
+                  <span>IDR {(pricing.finalPrice + (guest.extraBed * 100000)).toLocaleString()}</span>
                 </div>
               </div>
             </div>

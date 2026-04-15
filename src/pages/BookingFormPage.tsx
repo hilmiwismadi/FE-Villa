@@ -38,6 +38,144 @@ const BookingFormPage: React.FC = () => {
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
+  // City/Province autocomplete states
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [provinceSuggestions, setProvinceSuggestions] = useState<string[]>([]);
+  const [showProvinceSuggestions, setShowProvinceSuggestions] = useState(false);
+
+  // Guest count range popup state
+  const [showGuestCountPopup, setShowGuestCountPopup] = useState(false);
+  const [guestCountPopupValue, setGuestCountPopupValue] = useState<number>(26);
+  const [guestCountPopupError, setGuestCountPopupError] = useState('');
+
+  // Indonesian provinces data
+  const provinces = [
+    'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Jambi', 'Sumatera Selatan', 'Bengkulu',
+    'Lampung', 'Kepulauan Bangka Belitung', 'Kepulauan Riau', 'DKI Jakarta', 'Jawa Barat',
+    'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur', 'Banten', 'Bali', 'Nusa Tenggara Barat',
+    'Nusa Tenggara Timur', 'Kalimantan Barat', 'Kalimantan Tengah', 'Kalimantan Selatan',
+    'Kalimantan Timur', 'Kalimantan Utara', 'Sulawesi Utara', 'Sulawesi Tengah',
+    'Sulawesi Selatan', 'Sulawesi Tenggara', 'Gorontalo', 'Sulawesi Barat', 'Maluku',
+    'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Tengah', 'Papua Selatan', 'Papua Pegunungan'
+  ];
+
+  // Major Indonesian cities organized by province
+  const citiesByProvince: Record<string, string[]> = {
+    'Aceh': ['Banda Aceh', 'Sabang', 'Langsa', 'Lhokseumawe'],
+    'Sumatera Utara': ['Medan', 'Binjai', 'Pematang Siantar', 'Tebing Tinggi'],
+    'Sumatera Barat': ['Padang', 'Bukittinggi', 'Payakumbuh', 'Pariaman'],
+    'Riau': ['Pekanbaru', 'Dumai'],
+    'Jambi': ['Jambi', 'Sungai Penuh'],
+    'Sumatera Selatan': ['Palembang', 'Prabumulih', 'Pagar Alam'],
+    'Bengkulu': ['Bengkulu'],
+    'Lampung': ['Bandar Lampung', 'Metro'],
+    'Kepulauan Bangka Belitung': ['Pangkalpinang'],
+    'Kepulauan Riau': ['Batam', 'Tanjung Pinang'],
+    'DKI Jakarta': ['Jakarta Pusat', 'Jakarta Selatan', 'Jakarta Barat', 'Jakarta Timur', 'Jakarta Utara'],
+    'Jawa Barat': ['Bandung', 'Bekasi', 'Bogor', 'Depok', 'Cirebon', 'Sukabumi', 'Tasikmalaya'],
+    'Jawa Tengah': ['Semarang', 'Solo', 'Magelang', 'Pekalongan', 'Tegal', 'Salatiga'],
+    'DI Yogyakarta': ['Yogyakarta', 'Sleman', 'Bantul'],
+    'Jawa Timur': ['Surabaya', 'Malang', 'Madiun', 'Kediri', 'Probolinggo', 'Pasuruan', 'Batu'],
+    'Banten': ['Tangerang', 'Serang', 'Cilegon', 'Tangerang Selatan'],
+    'Bali': ['Denpasar', 'Badung', 'Gianyar'],
+    'Nusa Tenggara Barat': ['Mataram', 'Bima'],
+    'Nusa Tenggara Timur': ['Kupang', 'Ende', 'Maumere'],
+    'Kalimantan Barat': ['Pontianak', 'Singkawang'],
+    'Kalimantan Tengah': ['Palangka Raya'],
+    'Kalimantan Selatan': ['Banjarmasin', 'Banjarbaru'],
+    'Kalimantan Timur': ['Balikpapan', 'Samarinda', 'Bontang'],
+    'Kalimantan Utara': ['Tanjung Selor'],
+    'Sulawesi Utara': ['Manado', 'Bitung', 'Tomohon'],
+    'Sulawesi Tengah': ['Palu'],
+    'Sulawesi Selatan': ['Makassar', 'Parepare', 'Polewali'],
+    'Sulawesi Tenggara': ['Kendari', 'Baubau'],
+    'Gorontalo': ['Gorontalo'],
+    'Sulawesi Barat': ['Mamuju'],
+    'Maluku': ['Ambon', 'Tual'],
+    'Maluku Utara': ['Ternate', 'Tidore'],
+    'Papua': ['Jayapura'],
+    'Papua Barat': ['Manokwari'],
+    'Papua Tengah': ['Nabire'],
+    'Papua Selatan': ['Merauke'],
+    'Papua Pegunungan': ['Wamena']
+  };
+
+  // Get all cities for fallback
+  const allCities = Object.values(citiesByProvince).flat();
+
+  // Get filtered cities based on selected province
+  const getFilteredCities = () => {
+    if (formData.province && citiesByProvince[formData.province]) {
+      return citiesByProvince[formData.province];
+    }
+    return allCities;
+  };
+
+  // Handle city input changes with autocomplete
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, city: value });
+
+    if (value.length >= 2) {
+      const filtered = getFilteredCities().filter(city =>
+        city.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 5);
+      setCitySuggestions(filtered);
+      setShowCitySuggestions(true);
+    } else {
+      setShowCitySuggestions(false);
+    }
+  };
+
+  // Handle province selection and reset city
+  const handleProvinceSelect = (province: string) => {
+    setFormData({ ...formData, province, city: '' });
+    setShowProvinceSuggestions(false);
+  };
+
+  // Handle province input changes with autocomplete
+  const handleProvinceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, province: value });
+
+    if (value.length >= 2) {
+      const filtered = provinces.filter(province =>
+        province.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 5);
+      setProvinceSuggestions(filtered);
+      setShowProvinceSuggestions(true);
+    } else {
+      setShowProvinceSuggestions(false);
+    }
+  };
+
+  // Handle guest count range selection
+  const handleGuestCountChange = (value: string) => {
+    if (value === '25+') {
+      setShowGuestCountPopup(true);
+    } else {
+      // Convert range to median value
+      const guestCountMap: Record<string, number> = {
+        '1-10': 5,
+        '11-20': 15,
+        '21-25': 23
+      };
+      setFormData({ ...formData, numberOfGuests: guestCountMap[value] || 1 });
+    }
+  };
+
+  // Handle popup submission for guest count 25+
+  const handleGuestCountPopupSubmit = () => {
+    if (guestCountPopupValue < 1 || guestCountPopupValue > 35) {
+      setGuestCountPopupError('Jumlah tamu harus antara 1-35 orang');
+      return;
+    }
+    setGuestCountPopupError('');
+    setFormData({ ...formData, numberOfGuests: guestCountPopupValue });
+    setShowGuestCountPopup(false);
+  };
+
   const derivedCheckIn = dateRange.checkIn;
   const derivedCheckOut = dateRange.checkOut;
 
@@ -126,8 +264,8 @@ const BookingFormPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.province) {
+    // Validation - removed address requirement
+    if (!formData.fullName || !formData.phone || !formData.city || !formData.province) {
       alert(t.booking.form.fillRequired);
       return;
     }
@@ -160,6 +298,25 @@ const BookingFormPage: React.FC = () => {
         setFormData({ orderId: undefined, ...restFormData });
       }
     }
+
+    // Console log the payload that will be sent
+    console.log('========================================');
+    console.log('BOOKING FORM PAYLOAD (FE -> Review Page)');
+    console.log('========================================');
+    console.log('Raw formData:', formData);
+    console.log('Normalized phone:', normalizedPhone);
+    console.log('Date Range:', {
+      checkIn: derivedCheckIn ? derivedCheckIn.toISOString() : null,
+      checkOut: derivedCheckOut ? derivedCheckOut.toISOString() : null,
+      nightCount: nightCount
+    });
+    console.log('Guest Info Payload:', {
+      ...formData,
+      phone: normalizedPhone,
+      checkInDate: derivedCheckIn ? format(derivedCheckIn, 'yyyy-MM-dd') : null,
+      checkOutDate: derivedCheckOut ? format(derivedCheckOut, 'yyyy-MM-dd') : null
+    });
+    console.log('========================================');
 
     // Just save form data to context, navigate to review
     // Order will be created on review page
@@ -255,39 +412,9 @@ const BookingFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Alamat */}
-                <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">
-                    {t.booking.form.address} *
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleFormChange}
-                    rows={3}
-                    className="input-field resize-none"
-                    placeholder={t.booking.form.addressPlaceholder}
-                    required
-                  ></textarea>
-                </div>
-
-                {/* Kota & Provinsi */}
+                {/* Provinsi & Kota - with autocomplete (Province first) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-primary-900 mb-2">
-                      {t.booking.form.city} *
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleFormChange}
-                      className="input-field"
-                      placeholder={t.booking.form.cityPlaceholder}
-                      required
-                    />
-                  </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-primary-900 mb-2">
                       {t.booking.form.province} *
                     </label>
@@ -295,11 +422,61 @@ const BookingFormPage: React.FC = () => {
                       type="text"
                       name="province"
                       value={formData.province}
-                      onChange={handleFormChange}
+                      onChange={handleProvinceChange}
                       className="input-field"
                       placeholder={t.booking.form.provincePlaceholder}
                       required
+                      autoComplete="off"
                     />
+                    {showProvinceSuggestions && provinceSuggestions.length > 0 && (
+                      <ul className="absolute z-10 w-full bg-white border border-primary-200 rounded mt-1 max-h-40 overflow-y-auto">
+                        {provinceSuggestions.map((province, index) => (
+                          <li
+                            key={index}
+                            onClick={() => handleProvinceSelect(province)}
+                            className="px-4 py-2 hover:bg-primary-50 cursor-pointer text-sm"
+                          >
+                            {province}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-primary-900 mb-2">
+                      {t.booking.form.city} *
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleCityChange}
+                      className="input-field"
+                      placeholder={formData.province ? `Kota di ${formData.province}` : t.booking.form.cityPlaceholder}
+                      required
+                      autoComplete="off"
+                    />
+                    {formData.province && !formData.city && (
+                      <p className="text-xs text-primary-500 mt-1">
+                        Menampilkan kota di {formData.province}
+                      </p>
+                    )}
+                    {showCitySuggestions && citySuggestions.length > 0 && (
+                      <ul className="absolute z-10 w-full bg-white border border-primary-200 rounded mt-1 max-h-40 overflow-y-auto">
+                        {citySuggestions.map((city, index) => (
+                          <li
+                            key={index}
+                            onClick={() => {
+                              setFormData({ ...formData, city });
+                              setShowCitySuggestions(false);
+                            }}
+                            className="px-4 py-2 hover:bg-primary-50 cursor-pointer text-sm"
+                          >
+                            {city}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
 
@@ -309,16 +486,23 @@ const BookingFormPage: React.FC = () => {
                     <label className="block text-sm font-medium text-primary-900 mb-2">
                       {t.booking.form.numberOfGuests} *
                     </label>
-                    <input
-                      type="number"
+                    <select
                       name="numberOfGuests"
-                      value={formData.numberOfGuests}
-                      onChange={handleFormChange}
-                      min="1"
-                      max="10"
+                      value={formData.numberOfGuests <= 10 ? '1-10' : formData.numberOfGuests <= 20 ? '11-20' : formData.numberOfGuests <= 25 ? '21-25' : '25+'}
+                      onChange={(e) => handleGuestCountChange(e.target.value)}
                       className="input-field"
                       required
-                    />
+                    >
+                      <option value="1-10">1-10 orang</option>
+                      <option value="11-20">11-20 orang</option>
+                      <option value="21-25">21-25 orang</option>
+                      <option value="25+">25+ orang</option>
+                    </select>
+                    {formData.numberOfGuests > 25 && (
+                      <p className="text-xs text-primary-600 mt-1">
+                        Jumlah tamu: {formData.numberOfGuests} orang
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-primary-900 mb-2">
@@ -331,10 +515,17 @@ const BookingFormPage: React.FC = () => {
                       className="input-field"
                     >
                       <option value={0}>{t.booking.form.extraBedNone}</option>
-                      <option value={1}>{t.booking.form.extraBedOption.replace('{count}', '1')}</option>
-                      <option value={2}>{t.booking.form.extraBedOption.replace('{count}', '2')}</option>
-                      <option value={3}>{t.booking.form.extraBedOption.replace('{count}', '3')}</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(count => (
+                        <option key={count} value={count}>
+                          {count} Bed Tambahan (Rp{(count * 100000).toLocaleString()})
+                        </option>
+                      ))}
                     </select>
+                    {formData.extraBed > 0 && (
+                      <p className="text-xs text-primary-600 mt-1">
+                        Total biaya bed tambahan: Rp{(formData.extraBed * 100000).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -400,6 +591,12 @@ const BookingFormPage: React.FC = () => {
                     <span>IDR {(pricing.originalPrice / (nightCount || 1)).toLocaleString()} × {nightCount} {t.booking.form.nightLabel}</span>
                     <span>IDR {pricing.originalPrice.toLocaleString()}</span>
                   </div>
+                  {formData.extraBed > 0 && (
+                    <div className="flex justify-between text-primary-700 mt-2">
+                      <span>Bed Tambahan ({formData.extraBed} × Rp100.000)</span>
+                      <span>IDR {(formData.extraBed * 100000).toLocaleString()}</span>
+                    </div>
+                  )}
                   {appliedPromo && (
                     <div className="flex justify-between text-green-600 mt-2">
                       <span>{t.booking.calendar.discount} ({appliedPromo.discountPercentage}%)</span>
@@ -409,7 +606,7 @@ const BookingFormPage: React.FC = () => {
                   <div className="pt-3 mt-3 border-t border-primary-200">
                     <div className="flex justify-between font-semibold text-lg text-primary-900">
                       <span>{t.booking.calendar.total}</span>
-                      <span>IDR {pricing.finalPrice.toLocaleString()}</span>
+                      <span>IDR {(pricing.finalPrice + (formData.extraBed * 100000)).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -460,6 +657,49 @@ const BookingFormPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Guest Count Popup for 25+ */}
+      {showGuestCountPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-primary-900 mb-4">
+              Masukkan Jumlah Tamu
+            </h3>
+            <input
+              type="number"
+              min="1"
+              max="35"
+              value={guestCountPopupValue}
+              onChange={(e) => setGuestCountPopupValue(Number(e.target.value))}
+              className="input-field mb-2"
+              placeholder="Masukkan jumlah tamu"
+            />
+            <p className="text-sm text-primary-600 mb-4">
+              Maksimal 35 orang
+            </p>
+            {guestCountPopupError && (
+              <p className="text-sm text-red-600 mb-4">{guestCountPopupError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowGuestCountPopup(false);
+                  setGuestCountPopupError('');
+                }}
+                className="flex-1 px-4 py-2 border border-primary-300 text-primary-700 hover:bg-primary-50 rounded"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleGuestCountPopupSubmit}
+                className="flex-1 px-4 py-2 bg-primary-900 text-white hover:bg-primary-800 rounded"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
