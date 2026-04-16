@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isBefore, startOfToday, addMonths, subMonths, parse } from 'date-fns';
 import { useTranslation } from '../i18n/LanguageContext';
 import type { CalendarDay } from '../types';
@@ -118,6 +118,32 @@ const Calendar: React.FC<CalendarProps> = ({
     }
     return result;
   };
+
+  const getCustomPricingLabel = (dayData?: CalendarDay): string | null => {
+    if (!dayData) return null;
+    return dayData.label || dayData.customPriceLabel || dayData.pricingLabel || null;
+  };
+
+  const defaultMonthPrice = useMemo(() => {
+    if (!calendarData || calendarData.length === 0) return null;
+
+    const priceCounts = new Map<number, number>();
+    calendarData.forEach(day => {
+      if (typeof day.price !== 'number') return;
+      priceCounts.set(day.price, (priceCounts.get(day.price) || 0) + 1);
+    });
+
+    let mostFrequentPrice: number | null = null;
+    let maxCount = 0;
+    priceCounts.forEach((count, price) => {
+      if (count > maxCount) {
+        maxCount = count;
+        mostFrequentPrice = price;
+      }
+    });
+
+    return mostFrequentPrice;
+  }, [calendarData]);
 
   const isDateSelected = (date: Date) => {
     if (multiSelect) return isDateInMultiSelect(date);
@@ -247,17 +273,24 @@ const Calendar: React.FC<CalendarProps> = ({
           const dateStr = format(date, 'yyyy-MM-dd');
           const dayData = calendarData?.find(d => d.date === dateStr);
           const price = dayData?.price;
+          const customPricingLabel = getCustomPricingLabel(dayData);
+          const hasCustomPricingByPrice =
+            typeof price === 'number' &&
+            typeof defaultMonthPrice === 'number' &&
+            price !== defaultMonthPrice;
+          const hasCustomPricing = Boolean(customPricingLabel) || dayData?.source === 'custom' || hasCustomPricingByPrice;
+          const customPricingTooltip = customPricingLabel;
 
           if (readOnly) {
             return (
               <div
                 key={date.toString()}
                 className={`
-                  aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
+                  relative group aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                   ${disabled ? 'text-primary-300' : 'text-primary-900'}
                   ${isToday(date) ? 'border-2 border-gold-600' : ''}
                   ${booked || blocked ? 'bg-red-50 line-through' : ''}
-                  ${isWeekend && !disabled ? 'text-red-600 font-semibold' : ''}
+                  ${(isWeekend || hasCustomPricing) && !disabled ? 'text-red-600 font-semibold' : ''}
                 `}
               >
                 <span>{format(date, 'd')}</span>
@@ -265,6 +298,11 @@ const Calendar: React.FC<CalendarProps> = ({
                   <span className="text-xs text-primary-500 mt-1">
                     {formatPrice(price)}
                   </span>
+                )}
+                {customPricingTooltip && (
+                  <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg group-hover:block">
+                    {customPricingTooltip}
+                  </div>
                 )}
               </div>
             );
@@ -276,13 +314,13 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={() => handleDateClick(date)}
               disabled={disabled}
               className={`
-                aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
+                relative group aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                 ${disabled ? 'text-primary-300 cursor-not-allowed' : 'text-primary-900 hover:bg-primary-100 cursor-pointer'}
                 ${selected ? 'bg-primary-900 text-white hover:bg-primary-900' : ''}
                 ${inRange ? 'bg-primary-100' : ''}
                 ${isToday(date) && !selected ? 'border-2 border-gold-600' : ''}
                 ${booked || blocked ? 'bg-red-50 line-through' : ''}
-                ${isWeekend && !disabled && !selected ? 'text-red-600 font-semibold' : ''}
+                ${(isWeekend || hasCustomPricing) && !disabled && !selected ? 'text-red-600 font-semibold' : ''}
               `}
             >
               <span>{format(date, 'd')}</span>
@@ -290,6 +328,11 @@ const Calendar: React.FC<CalendarProps> = ({
                 <span className="text-xs mt-1">
                   {formatPrice(price)}
                 </span>
+              )}
+              {customPricingTooltip && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg group-hover:block">
+                  {customPricingTooltip}
+                </div>
               )}
             </button>
           );

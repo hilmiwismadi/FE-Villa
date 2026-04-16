@@ -109,6 +109,10 @@ export interface CalendarDay {
   date: string; // YYYY-MM-DD
   status: 'available' | 'booked' | 'blocked' | 'in_transaction';
   price?: number;
+  source?: string;
+  label?: string | null;
+  customPriceLabel?: string | null;
+  pricingLabel?: string | null;
 }
 
 export interface CalendarDate {

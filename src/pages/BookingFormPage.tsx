@@ -112,20 +112,30 @@ const BookingFormPage: React.FC = () => {
     return allCities;
   };
 
+  const getProvinceSuggestions = (query: string) => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return provinces.slice(0, 5);
+    return provinces
+      .filter(province => province.toLowerCase().includes(normalizedQuery))
+      .slice(0, 5);
+  };
+
+  const getCitySuggestions = (query: string) => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const sourceCities = getFilteredCities();
+    if (!normalizedQuery) return sourceCities.slice(0, 5);
+    return sourceCities
+      .filter(city => city.toLowerCase().includes(normalizedQuery))
+      .slice(0, 5);
+  };
+
   // Handle city input changes with autocomplete
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData({ ...formData, city: value });
-
-    if (value.length >= 2) {
-      const filtered = getFilteredCities().filter(city =>
-        city.toLowerCase().includes(value.toLowerCase())
-      ).slice(0, 5);
-      setCitySuggestions(filtered);
-      setShowCitySuggestions(true);
-    } else {
-      setShowCitySuggestions(false);
-    }
+    const filtered = getCitySuggestions(value);
+    setCitySuggestions(filtered);
+    setShowCitySuggestions(filtered.length > 0);
   };
 
   // Handle province selection and reset city
@@ -138,16 +148,9 @@ const BookingFormPage: React.FC = () => {
   const handleProvinceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData({ ...formData, province: value });
-
-    if (value.length >= 2) {
-      const filtered = provinces.filter(province =>
-        province.toLowerCase().includes(value.toLowerCase())
-      ).slice(0, 5);
-      setProvinceSuggestions(filtered);
-      setShowProvinceSuggestions(true);
-    } else {
-      setShowProvinceSuggestions(false);
-    }
+    const filtered = getProvinceSuggestions(value);
+    setProvinceSuggestions(filtered);
+    setShowProvinceSuggestions(filtered.length > 0);
   };
 
   // Handle guest count range selection
@@ -423,6 +426,11 @@ const BookingFormPage: React.FC = () => {
                       name="province"
                       value={formData.province}
                       onChange={handleProvinceChange}
+                      onFocus={() => {
+                        const filtered = getProvinceSuggestions(formData.province || '');
+                        setProvinceSuggestions(filtered);
+                        setShowProvinceSuggestions(filtered.length > 0);
+                      }}
                       className="input-field"
                       placeholder={t.booking.form.provincePlaceholder}
                       required
@@ -451,6 +459,11 @@ const BookingFormPage: React.FC = () => {
                       name="city"
                       value={formData.city}
                       onChange={handleCityChange}
+                      onFocus={() => {
+                        const filtered = getCitySuggestions(formData.city || '');
+                        setCitySuggestions(filtered);
+                        setShowCitySuggestions(filtered.length > 0);
+                      }}
                       className="input-field"
                       placeholder={formData.province ? `Kota di ${formData.province}` : t.booking.form.cityPlaceholder}
                       required

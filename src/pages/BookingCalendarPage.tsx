@@ -6,7 +6,14 @@ import { useTranslation } from '../i18n/LanguageContext';
 import Calendar from '../components/Calendar';
 import AvailabilityErrorModal from '../components/AvailabilityErrorModal';
 import type { CalendarDay } from '../types';
-import { getCalendar, checkAvailability, ApiError, type AvailabilityResponse } from '../services/orderService';
+import {
+  getCalendar,
+  checkAvailability,
+  getAdminCustomPricingRules,
+  ApiError,
+  type AvailabilityResponse,
+  type CustomPricingRuleResponse
+} from '../services/orderService';
 import { validatePromo } from '../services/promoService';
 
 const BookingCalendarPage: React.FC = () => {
@@ -29,7 +36,6 @@ const BookingCalendarPage: React.FC = () => {
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
-  const [showBookingMethodModal, setShowBookingMethodModal] = useState(false);
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityError, setAvailabilityError] = useState<AvailabilityResponse | null>(null);
@@ -37,7 +43,6 @@ const BookingCalendarPage: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingDateToAdd, setPendingDateToAdd] = useState<Date | null>(null);
 
-  const adminWhatsApp = '6281809252706';
   const basePrice = 2000000;
 
   // Derive checkIn/checkOut from selected dates using useMemo to prevent infinite loops
@@ -55,6 +60,41 @@ const BookingCalendarPage: React.FC = () => {
 
   const numberOfNights = selectedDates.length;
 
+  const selectedCustomPricingLabels = useMemo(() => {
+    return selectedDates
+      .map(date => {
+        const dayData = calendarData.find(d => d.date === format(date, 'yyyy-MM-dd'));
+        const label = dayData?.label
+          || dayData?.customPriceLabel
+          || dayData?.pricingLabel;
+        if (!label) return null;
+        return { date, label };
+      })
+      .filter((entry): entry is { date: Date; label: string } => entry !== null);
+  }, [selectedDates, calendarData]);
+
+  const isRuleAppliedToDate = (rule: CustomPricingRuleResponse, dateStr: string, dayPrice?: number): boolean => {
+    if (!rule.isActive) return false;
+    if (!rule.label) return false;
+    if (!rule.startDate || !rule.endDate) return false;
+    if (dateStr < rule.startDate || dateStr > rule.endDate) return false;
+
+    if (Array.isArray(rule.dayOfWeek) && rule.dayOfWeek.length > 0) {
+      const dateDay = new Date(`${dateStr}T00:00:00`).getDay();
+      if (!rule.dayOfWeek.includes(dateDay)) return false;
+    }
+
+    const rulePrice = typeof rule.customAmount === 'number'
+      ? rule.customAmount
+      : rule.amount;
+
+    if (typeof rulePrice === 'number' && typeof dayPrice === 'number' && rulePrice !== dayPrice) {
+      return false;
+    }
+
+    return true;
+  };
+
   // Sync derived dates to context
   useEffect(() => {
     setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
@@ -64,7 +104,31 @@ const BookingCalendarPage: React.FC = () => {
   const handleMonthChange = async (month: string) => {
     try {
       const response = await getCalendar(month);
-      setCalendarData(response.days);
+      const daysWithLabel = [...response.days];
+
+      try {
+        const customPricingResponse = await getAdminCustomPricingRules(1, 500);
+        if (customPricingResponse.rules.length > 0) {
+          daysWithLabel.forEach(day => {
+            const matchingRule = customPricingResponse.rules.find(rule =>
+              isRuleAppliedToDate(rule, day.date, day.price)
+            );
+
+            if (matchingRule?.label) {
+              day.label = matchingRule.label;
+              day.source = 'custom';
+            }
+          });
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          // Public users cannot access admin pricing rules; keep calendar usable without labels.
+        } else {
+          console.error('Failed to fetch custom pricing rules:', error);
+        }
+      }
+
+      setCalendarData(daysWithLabel);
     } catch (error) {
       if (error instanceof ApiError) {
         console.error('Failed to fetch calendar data:', error.message);
@@ -107,8 +171,14 @@ const BookingCalendarPage: React.FC = () => {
 
     let discountAmount = 0;
     if (appliedPromo) {
-      discountAmount = (originalPrice * appliedPromo.discountPercentage) / 100;
+      if (appliedPromo.discountType === 'fixed') {
+        discountAmount = appliedPromo.discountValue || appliedPromo.discountPercentage || 0;
+      } else {
+        const percentage = appliedPromo.discountValue || appliedPromo.discountPercentage || 0;
+        discountAmount = (originalPrice * percentage) / 100;
+      }
     }
+    discountAmount = Math.min(discountAmount, originalPrice);
     const finalPrice = originalPrice - discountAmount;
     setPricing({ originalPrice, discountAmount, finalPrice });
   };
@@ -185,28 +255,35 @@ const BookingCalendarPage: React.FC = () => {
     setPendingDateToAdd(null);
   };
 
-  const handleApplyPromo = async () => {
+  const handleApplyPromo = async (promoCodeInput?: string) => {
     setPromoError('');
     setPromoSuccess('');
     setValidatingPromo(true);
 
-    if (!derivedCheckIn || !derivedCheckOut || !promoCode) {
+    const code = (promoCodeInput ?? promoCode).trim().toUpperCase();
+    if (!derivedCheckIn || !derivedCheckOut || !code) {
       setValidatingPromo(false);
       return;
     }
 
     try {
       const response = await validatePromo({
-        code: promoCode,
+        code,
         checkIn: format(derivedCheckIn, 'yyyy-MM-dd'),
         checkOut: format(derivedCheckOut, 'yyyy-MM-dd'),
         guestPhone: '',
       });
 
       if (response.valid) {
+        const discountValue = response.discountValue || 0;
+        const discountText = response.discountType === 'fixed'
+          ? `IDR ${discountValue.toLocaleString()}`
+          : `${discountValue}%`;
+
         setAppliedPromo({
-          code: promoCode.toUpperCase(),
-          discountPercentage: response.discountValue || 0,
+          code,
+          discountPercentage: response.discountType === 'percentage' ? discountValue : 0,
+          discountValue,
           discountType: response.discountType,
           dayCondition: response.dayCondition,
           customDays: response.customDays,
@@ -214,7 +291,7 @@ const BookingCalendarPage: React.FC = () => {
           validUntil: new Date(),
           isActive: true,
         });
-        setPromoSuccess(`${t.booking.calendar.discountApplied}`);
+        setPromoSuccess(`Diskon ditemukan: ${discountText}`);
       } else {
         setPromoError(response.reason || t.booking.calendar.invalidPromo);
         setAppliedPromo(null);
@@ -231,6 +308,22 @@ const BookingCalendarPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!derivedCheckIn || !derivedCheckOut) return;
+    if (!promoCode.trim()) {
+      setPromoError('');
+      setPromoSuccess('');
+      setAppliedPromo(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleApplyPromo(promoCode);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [promoCode, derivedCheckIn, derivedCheckOut]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleRemovePromo = () => {
     setPromoCode('');
     setAppliedPromo(null);
@@ -238,33 +331,22 @@ const BookingCalendarPage: React.FC = () => {
     setPromoError('');
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedDates.length < 1) {
       alert('Silakan pilih tanggal untuk menginap');
       return;
     }
-    setShowBookingMethodModal(true);
-  };
-
-  const handleBookViaWebsite = async () => {
-    console.log('[handleBookViaWebsite] clicked, selectedDates:', selectedDates.length, 'checkIn:', derivedCheckIn, 'checkOut:', derivedCheckOut);
 
     if (!derivedCheckIn || !derivedCheckOut) {
-      console.log('[handleBookViaWebsite] validation FAILED - closing modal');
       alert('Silakan pilih tanggal untuk menginap');
       return;
     }
-
-    console.log('[handleBookViaWebsite] validation passed - closing modal');
-    setShowBookingMethodModal(false);
 
     setCheckingAvailability(true);
     try {
       const checkInStr = format(derivedCheckIn, 'yyyy-MM-dd');
       const checkOutStr = format(derivedCheckOut, 'yyyy-MM-dd');
-      console.log('[handleBookViaWebsite] checking availability for:', checkInStr, 'to:', checkOutStr);
       const response = await checkAvailability(checkInStr, checkOutStr);
-      console.log('[handleBookViaWebsite] availability response:', response);
 
       if (!response.available) {
         setAvailabilityError(response);
@@ -272,26 +354,13 @@ const BookingCalendarPage: React.FC = () => {
         return;
       }
 
-      console.log('[handleBookViaWebsite] navigating to /book/form');
       navigate(localePath('/book/form'));
     } catch (error) {
-      console.error('[handleBookViaWebsite] Availability check failed:', error);
+      console.error('[handleContinue] Availability check failed:', error);
       alert('Failed to check availability. Please try again.');
     } finally {
       setCheckingAvailability(false);
     }
-  };
-
-  const handleBookViaWhatsApp = () => {
-    if (!derivedCheckIn || !derivedCheckOut) return;
-    const checkInStr = format(derivedCheckIn, 'd MMMM yyyy', { locale: dateFnsLocale });
-    const checkOutStr = format(derivedCheckOut, 'd MMMM yyyy', { locale: dateFnsLocale });
-    const message = t.booking.calendar.whatsappMessage
-      .replace('{checkIn}', checkInStr)
-      .replace('{checkOut}', checkOutStr)
-      .replace('{nights}', String(numberOfNights));
-    window.open(`https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`, '_blank');
-    setShowBookingMethodModal(false);
   };
 
   return (
@@ -414,8 +483,26 @@ const BookingCalendarPage: React.FC = () => {
                     </div>
                     {appliedPromo && (
                       <div className="flex justify-between text-green-600">
-                        <span>Diskon ({appliedPromo.discountPercentage}%)</span>
+                        <span>
+                          Diskon (
+                          {appliedPromo.discountType === 'fixed'
+                            ? `IDR ${(appliedPromo.discountValue || 0).toLocaleString()}`
+                            : `${appliedPromo.discountValue || appliedPromo.discountPercentage || 0}%`}
+                          )
+                        </span>
                         <span>- IDR {pricing.discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedCustomPricingLabels.length > 0 && (
+                      <div className="rounded bg-red-50 border border-red-100 p-2">
+                        <p className="text-xs font-semibold text-red-700">Hari Libur Nasional</p>
+                        <div className="mt-1 space-y-1">
+                          {selectedCustomPricingLabels.map(({ date, label }) => (
+                            <p key={`${format(date, 'yyyy-MM-dd')}-${label}`} className="text-xs text-red-700">
+                              {format(date, 'd MMM yyyy', { locale: dateFnsLocale })}: {label}
+                            </p>
+                          ))}
+                        </div>
                       </div>
                     )}
                     <div className="pt-3 border-t border-primary-200">
@@ -443,7 +530,9 @@ const BookingCalendarPage: React.FC = () => {
                         placeholder={t.booking.calendar.enterCode}
                         className="input-field flex-1 uppercase text-sm"
                       />
-                      <button onClick={handleApplyPromo} className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors" disabled={!promoCode || validatingPromo}>{validatingPromo ? 'Checking...' : t.booking.calendar.apply}</button>
+                      <button onClick={() => handleApplyPromo()} className="px-3 py-2 bg-primary-900 text-white text-sm hover:bg-primary-800 transition-colors" disabled={!promoCode || validatingPromo}>
+                        {validatingPromo ? 'Checking...' : t.booking.calendar.apply}
+                      </button>
                     </div>
                     {promoError && <p className="mt-2 text-xs text-red-600">{promoError}</p>}
                     {promoSuccess && <p className="mt-2 text-xs text-green-600">{promoSuccess}</p>}
@@ -453,7 +542,11 @@ const BookingCalendarPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-green-900">{appliedPromo.code}</p>
-                        <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% {t.booking.calendar.discount.toLowerCase()}</p>
+                        <p className="text-xs text-green-700">
+                          {appliedPromo.discountType === 'fixed'
+                            ? `IDR ${(appliedPromo.discountValue || 0).toLocaleString()}`
+                            : `${appliedPromo.discountValue || appliedPromo.discountPercentage || 0}%`} {t.booking.calendar.discount.toLowerCase()}
+                        </p>
                       </div>
                       <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">{t.booking.calendar.remove}</button>
                     </div>
@@ -465,65 +558,43 @@ const BookingCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Booking Method Modal */}
-      {showBookingMethodModal && (
+      {/* Replace date selection confirmation */}
+      {showConfirmModal && pendingDateToAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowBookingMethodModal(false)}></div>
+          <div className="absolute inset-0 bg-black/50" onClick={handleCancelReplace}></div>
           <div className="relative bg-white max-w-md w-full mx-4 p-8 shadow-xl">
-            <button onClick={() => setShowBookingMethodModal(false)} className="absolute top-4 right-4 text-primary-400 hover:text-primary-900 transition-colors" aria-label="Close">
+            <button onClick={handleCancelReplace} className="absolute top-4 right-4 text-primary-400 hover:text-primary-900 transition-colors" aria-label="Close">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-
-            <h3 className="text-2xl font-serif text-primary-900 mb-2">{t.booking.calendar.modalTitle}</h3>
-            <p className="text-sm text-primary-600 mb-8">{t.booking.calendar.modalSubtitle}</p>
-            {showConfirmModal && pendingDateToAdd && (
-              <div className="text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 6v.01m-6 6H12m0-6v6m0-6v.01" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-primary-900 mb-2">
-                  Ganti Pilihan Tanggal?
-                </h3>
-                <p className="text-sm text-primary-600 mb-6">
-                  Anda memilih tanggal <strong>{format(pendingDateToAdd, 'd MMMM yyyy', { locale: dateFnsLocale })}</strong> yang terpisah dari pilihan sebelumnya.
-                  <br /><br />
-                  Pilihan ini akan mengganti tanggal yang sudah dipilih dan memulai dari tanggal baru tersebut.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCancelReplace}
-                    className="flex-1 px-4 py-2 border border-primary-300 text-primary-700 hover:bg-primary-50 rounded transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleConfirmReplace}
-                    className="flex-1 px-4 py-2 bg-primary-900 text-white hover:bg-primary-800 rounded transition-colors"
-                  >
-                    Ya, Ganti
-                  </button>
-                </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 6v.01m-6 6H12m0-6v6m0-6v.01" />
+                </svg>
               </div>
-            )}
-
-            {!showConfirmModal && (
-              <div className="space-y-4">
-                <button onClick={handleBookViaWebsite} className="w-full flex items-center gap-4 p-4 border-2 border-primary-200 hover:border-gold-600 rounded transition-colors text-left group">
-                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-gold-50">
-                    <svg className="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18" /></svg>
-                  </div>
-                  <div><p className="font-semibold text-primary-900">{t.booking.calendar.bookViaWebsite}</p><p className="text-sm text-primary-600">{t.booking.calendar.bookViaWebsiteDesc}</p></div>
+              <h3 className="text-xl font-semibold text-primary-900 mb-2">
+                Ganti Pilihan Tanggal?
+              </h3>
+              <p className="text-sm text-primary-600 mb-6">
+                Anda memilih tanggal <strong>{format(pendingDateToAdd, 'd MMMM yyyy', { locale: dateFnsLocale })}</strong> yang terpisah dari pilihan sebelumnya.
+                <br /><br />
+                Pilihan ini akan mengganti tanggal yang sudah dipilih dan memulai dari tanggal baru tersebut.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelReplace}
+                  className="flex-1 px-4 py-2 border border-primary-300 text-primary-700 hover:bg-primary-50 rounded transition-colors"
+                >
+                  Batal
                 </button>
-                <button onClick={handleBookViaWhatsApp} className="w-full flex items-center gap-4 p-4 border-2 border-primary-200 hover:border-green-500 rounded transition-colors text-left group">
-                  <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-green-100">
-                    <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                  </div>
-                  <div><p className="font-semibold text-primary-900">{t.booking.calendar.bookViaWhatsApp}</p><p className="text-sm text-primary-600">{t.booking.calendar.bookViaWhatsAppDesc}</p></div>
+                <button
+                  onClick={handleConfirmReplace}
+                  className="flex-1 px-4 py-2 bg-primary-900 text-white hover:bg-primary-800 rounded transition-colors"
+                >
+                  Ya, Ganti
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

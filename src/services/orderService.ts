@@ -100,6 +100,22 @@ export interface RevenueResponse {
   }>;
 }
 
+export interface CustomPricingRuleResponse {
+  id: string;
+  type: string;
+  amount: number | null;
+  customAmount: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  dayOfWeek: number[] | null;
+  blockedDate: string | null;
+  blockReason: string | null;
+  label: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Re-export ApiError from shared errors file
 export { ApiError } from './errors';
 
@@ -325,6 +341,21 @@ export async function getRevenue(
   let url = `/order/admin/revenue?period=${period}&year=${year}`;
   if (month) url += `&month=${month}`;
   return apiRequest(url, {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * List active custom pricing rules (admin auth required)
+ */
+export async function getAdminCustomPricingRules(
+  page = 1,
+  limit = 200
+): Promise<{
+  rules: CustomPricingRuleResponse[];
+  total: number;
+}> {
+  return apiRequest(`/order/admin/pricing/custom?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
 }
