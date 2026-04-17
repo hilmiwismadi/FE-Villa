@@ -3,7 +3,10 @@
  * Base URL: http://localhost:4000 (dev) | http://<VPS_IP>:2470 (prod)
  */
 
-const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
+const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
+const BASE_URL = USE_DEV_PROXY
+  ? ''
+  : import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';
@@ -56,9 +59,11 @@ export interface CreateOrderRequest {
   guestAddress: string;
   guestCount: number;
   extraBeds: number;
-  estimatedCheckIn: '14-16' | '16-18' | '18-20' | '20-22';
+  estimatedCheckIn?: '14-16' | '16-18' | '18-20' | '20-22';
   checkInDate: string;
+  checkInHour?: string;
   checkOutDate: string;
+  checkOutHour?: string;
   promoCode?: string;
 }
 
@@ -114,6 +119,35 @@ export interface CustomPricingRuleResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminGuestListItem {
+  phone: string;
+  name: string;
+  address: string;
+  bookingCount: number;
+  totalNights: number;
+  lastBookingDate: string;
+}
+
+export interface AdminGuestDetailResponse {
+  phone: string;
+  name: string;
+  address: string;
+  bookingCount: number;
+  totalNights: number;
+  lastBookingDate: string;
+  bookings: Array<{
+    orderId: string;
+    status: string;
+    checkInDate: string;
+    checkInHour: string;
+    checkOutDate: string;
+    checkOutHour: string;
+    nightCount: number;
+    totalAmount: number;
+    createdAt: string;
+  }>;
 }
 
 // Re-export ApiError from shared errors file
@@ -356,6 +390,122 @@ export async function getAdminCustomPricingRules(
   total: number;
 }> {
   return apiRequest(`/order/admin/pricing/custom?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * Get default price rule
+ */
+export async function getAdminDefaultPricingRule(): Promise<CustomPricingRuleResponse> {
+  return apiRequest('/order/admin/pricing/default', {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * Set default price rule
+ */
+export async function setAdminDefaultPricingRule(amount: number): Promise<CustomPricingRuleResponse> {
+  return apiRequest('/order/admin/pricing/default', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ amount }),
+  });
+}
+
+/**
+ * Create a custom pricing rule
+ */
+export async function createAdminCustomPricingRule(data: {
+  frequency: 'onetime' | 'weekly';
+  amount: number;
+  startDate: string;
+  endDate: string;
+  label: string;
+  dayOfWeek?: number[];
+}): Promise<CustomPricingRuleResponse> {
+  return apiRequest('/order/admin/pricing/custom', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Delete a custom pricing rule by ID
+ */
+export async function deleteAdminCustomPricingRule(id: string): Promise<{ message: string }> {
+  return apiRequest(`/order/admin/pricing/custom/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * List blocked dates
+ */
+export async function getAdminBlockedDates(): Promise<{
+  blocks: CustomPricingRuleResponse[];
+}> {
+  return apiRequest('/order/admin/pricing/blocks', {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * Block a date
+ */
+export async function createAdminBlockedDate(date: string, reason: string): Promise<CustomPricingRuleResponse> {
+  return apiRequest('/order/admin/pricing/block', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ date, reason }),
+  });
+}
+
+/**
+ * Unblock a date by block ID
+ */
+export async function deleteAdminBlockedDate(id: string): Promise<{ message: string }> {
+  return apiRequest(`/order/admin/pricing/block/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * List guests for admin users
+ */
+export async function getAdminGuests(
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+  } = {}
+): Promise<{
+  guests: AdminGuestListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const search = new URLSearchParams();
+  search.set('page', String(params.page ?? 1));
+  search.set('limit', String(params.limit ?? 20));
+  if (params.search) search.set('search', params.search);
+  if (params.sortBy) search.set('sortBy', params.sortBy);
+
+  return apiRequest(`/order/admin/guests?${search.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * Get details and booking history for one guest
+ */
+export async function getAdminGuestDetail(phone: string): Promise<AdminGuestDetailResponse> {
+  return apiRequest(`/order/admin/guests/${encodeURIComponent(phone)}`, {
     headers: getAuthHeaders(),
   });
 }

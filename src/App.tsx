@@ -77,7 +77,10 @@ function App() {
                 <Route path="calendar" element={<CalendarTab />} />
                 <Route path="pricing" element={<PricingTab />} />
                 <Route path="users" element={<UsersTab />} />
-                <Route path="promos" element={<PromosTab />} />
+                <Route path="promos">
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path=":section" element={<PromosTab />} />
+                </Route>
               </Route>
             </Route>
 

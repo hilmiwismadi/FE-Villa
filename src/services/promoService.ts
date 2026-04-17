@@ -5,7 +5,10 @@
 
 import { ApiError } from './errors';
 
-const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://yutaka-promo.izcy.tech';
+const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
+const BASE_URL = USE_DEV_PROXY
+  ? ''
+  : import.meta.env.VITE_PROMO_SERVICE_URL || 'https://yutaka-promo.izcy.tech';
 
 // Common types
 export interface ValidatePromoRequest {

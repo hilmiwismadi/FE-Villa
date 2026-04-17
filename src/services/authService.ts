@@ -1,6 +1,9 @@
 import { ApiError } from './errors';
 
-const BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'https://rekognizcy.izcy.tech';
+const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
+const BASE_URL = USE_DEV_PROXY
+  ? ''
+  : import.meta.env.VITE_AUTH_SERVICE_URL || 'https://rekognizcy.izcy.tech';
 
 export interface TokenResponse {
   access_token: string;

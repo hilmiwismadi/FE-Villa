@@ -113,6 +113,8 @@ export interface CalendarDay {
   label?: string | null;
   customPriceLabel?: string | null;
   pricingLabel?: string | null;
+  priceSource?: 'default' | 'custom_onetime' | 'custom_weekly' | 'none';
+  blockReason?: string | null;
 }
 
 export interface CalendarDate {

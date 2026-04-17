@@ -158,13 +158,13 @@ const BookingFormPage: React.FC = () => {
     if (value === '25+') {
       setShowGuestCountPopup(true);
     } else {
-      // Convert range to median value
+      // Convert range to maximum value
       const guestCountMap: Record<string, number> = {
-        '1-10': 5,
-        '11-20': 15,
-        '21-25': 23
+        '1-10': 10,
+        '11-20': 20,
+        '21-25': 25
       };
-      setFormData({ ...formData, numberOfGuests: guestCountMap[value] || 1 });
+      setFormData({ ...formData, numberOfGuests: guestCountMap[value] || 10 });
     }
   };
 

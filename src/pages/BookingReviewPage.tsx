@@ -20,6 +20,30 @@ function createOrderDeduped(data: CreateOrderRequest): Promise<OrderResponse> {
   return requestPromise;
 }
 
+// Helper function to convert check-in time slot to hour string (HH:mm format)
+const formatCheckInHour = (timeSlot: string): string => {
+  const hourMap: Record<string, string> = {
+    '14:00 - 16:00': '14:00',
+    '16:00 - 18:00': '16:00',
+    '18:00 - 20:00': '18:00',
+    '20:00 - 22:00': '20:00',
+  };
+
+  return hourMap[timeSlot] ?? '14:00';
+}
+
+// Helper function to convert check-in time slot to estimatedCheckIn format
+const formatEstimatedCheckIn = (timeSlot: string): '14-16' | '16-18' | '18-20' | '20-22' => {
+  const estimatedMap: Record<string, '14-16' | '16-18' | '18-20' | '20-22'> = {
+    '14:00 - 16:00': '14-16',
+    '16:00 - 18:00': '16-18',
+    '18:00 - 20:00': '18-20',
+    '20:00 - 22:00': '20-22',
+  };
+
+  return estimatedMap[timeSlot] ?? '14-16';
+}
+
 function normalizePhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
@@ -116,10 +140,8 @@ const BookingReviewPage: React.FC = () => {
         }
 
         const checkInTime = formData.checkInTime || '14:00 - 16:00';
-        const estimatedCheckIn: '14-16' | '16-18' | '18-20' | '20-22' =
-          checkInTime === '16:00 - 18:00' ? '16-18' :
-          checkInTime === '18:00 - 20:00' ? '18-20' :
-          checkInTime === '20:00 - 22:00' ? '20-22' : '14-16';
+        const checkInHour = formatCheckInHour(checkInTime);
+        const estimatedCheckIn = formatEstimatedCheckIn(checkInTime);
 
         const orderData: CreateOrderRequest = {
           guestName: formData.fullName || '',
@@ -127,9 +149,11 @@ const BookingReviewPage: React.FC = () => {
           guestAddress: formData.address ? `${formData.address}, ${formData.city}, ${formData.province}` : `${formData.city || ''}, ${formData.province || ''}`,
           guestCount: Number(formData.numberOfGuests) || 1,
           extraBeds: Number(formData.extraBed) || 0,
-          estimatedCheckIn,
+          estimatedCheckIn: estimatedCheckIn,
           checkInDate: format(dateRange.checkIn, 'yyyy-MM-dd'),
+          checkInHour: checkInHour,
           checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
+          checkOutHour: '12:00',
           promoCode: appliedPromo?.code || undefined,
         };
 
