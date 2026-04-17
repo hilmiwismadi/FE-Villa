@@ -23,6 +23,7 @@ import CalendarTab from './pages/owner/CalendarTab';
 import PricingTab from './pages/owner/PricingTab';
 import UsersTab from './pages/owner/UsersTab';
 import PromosTab from './pages/owner/PromosTab';
+import AffiliatesTab from './pages/owner/AffiliatesTab';
 import AffiliateDashboard from './pages/affiliate/DashboardTab';
 import CodesTab from './pages/affiliate/CodesTab';
 import BookingsTab from './pages/affiliate/BookingsTab';
@@ -77,6 +78,7 @@ function App() {
                 <Route path="calendar" element={<CalendarTab />} />
                 <Route path="pricing" element={<PricingTab />} />
                 <Route path="users" element={<UsersTab />} />
+                <Route path="affiliates" element={<AffiliatesTab />} />
                 <Route path="promos" element={<PromosTab />} />
               </Route>
             </Route>
