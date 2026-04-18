@@ -107,7 +107,6 @@ export const bffService = {
   }) => bffRequest<{ user: any; affiliate: Affiliate }>('/bff/affiliate/create', {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: { 'x-admin-token': getAdminToken() },
   }),
 
   listAffiliates: () => bffRequest<Affiliate[]>('/bff/affiliate/list'),
@@ -127,14 +126,12 @@ export const bffService = {
     bffRequest<{ message: string }>(`/bff/affiliate/${id}/code`, {
       method: 'POST',
       body: JSON.stringify({ code, commissionRate, discountType, discountValue }),
-      headers: { 'x-admin-token': getAdminToken() },
     }),
 
   removeAffiliateCode: (id: string, code: string) =>
     bffRequest<{ message: string }>(`/bff/affiliate/${id}/code`, {
       method: 'DELETE',
       body: JSON.stringify({ code }),
-      headers: { 'x-admin-token': getAdminToken() },
     }),
 
   getAffiliateDashboard: () => bffRequest<AffiliateDashboardData>('/bff/dashboard/affiliate'),
@@ -155,13 +152,4 @@ export const bffService = {
   }),
 };
 
-function getAdminToken(): string {
-  try {
-    const raw = localStorage.getItem('villa-auth');
-    if (!raw) return '';
-    const auth = JSON.parse(raw);
-    return auth.accessToken || '';
-  } catch {
-    return '';
-  }
-}
+
