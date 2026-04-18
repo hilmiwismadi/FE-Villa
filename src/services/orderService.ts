@@ -3,10 +3,7 @@
  * Base URL: http://localhost:4000 (dev) | http://<VPS_IP>:2470 (prod)
  */
 
-const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
-const BASE_URL = USE_DEV_PROXY
-  ? ''
-  : import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
+const BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';
@@ -193,7 +190,7 @@ async function apiRequest<T>(
  * @param month - Format: YYYY-MM (e.g., "2026-03")
  */
 export async function getCalendar(month: string): Promise<CalendarResponse> {
-  return apiRequest<CalendarResponse>(`/order/calendar?month=${encodeURIComponent(month)}`);
+  return apiRequest<CalendarResponse>(`/bff/order/calendar?month=${encodeURIComponent(month)}`);
 }
 
 /**
@@ -206,7 +203,7 @@ export async function checkAvailability(
   checkOut: string
 ): Promise<AvailabilityResponse> {
   return apiRequest<AvailabilityResponse>(
-    `/order/availability?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+    `/bff/order/availability?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
   );
 }
 
@@ -215,14 +212,14 @@ export async function checkAvailability(
  * @param orderId - Order ID (e.g., "VY-260301-001")
  */
 export async function getOrder(orderId: string): Promise<OrderResponse> {
-  return apiRequest<OrderResponse>(`/order/${encodeURIComponent(orderId)}`);
+  return apiRequest<OrderResponse>(`/bff/order/${encodeURIComponent(orderId)}`);
 }
 
 /**
  * Create a new booking order. Starts a 10-minute payment timer.
  */
 export async function createOrder(data: CreateOrderRequest): Promise<OrderResponse> {
-  return apiRequest<OrderResponse>('/order/create', {
+  return apiRequest<OrderResponse>('/bff/order/create', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -232,7 +229,7 @@ export async function createOrder(data: CreateOrderRequest): Promise<OrderRespon
  * Confirm payment was made. Transitions order from in_transaction → pending.
  */
 export async function confirmPayment(orderId: string): Promise<ConfirmPaymentResponse> {
-  return apiRequest<ConfirmPaymentResponse>(`/order/${encodeURIComponent(orderId)}/confirm-payment`, {
+  return apiRequest<ConfirmPaymentResponse>(`/bff/order/${encodeURIComponent(orderId)}/confirm-payment`, {
     method: 'POST',
   });
 }
@@ -241,7 +238,7 @@ export async function confirmPayment(orderId: string): Promise<ConfirmPaymentRes
  * Check payment timer and expiry status
  */
 export async function getPaymentStatus(orderId: string): Promise<PaymentStatusResponse> {
-  return apiRequest<PaymentStatusResponse>(`/order/${encodeURIComponent(orderId)}/payment-status`);
+  return apiRequest<PaymentStatusResponse>(`/bff/order/${encodeURIComponent(orderId)}/payment-status`);
 }
 
 // ========== AUTHENTICATED ENDPOINTS ==========
@@ -269,7 +266,7 @@ export async function getMyBookings(page = 1, limit = 20): Promise<{
   page: number;
   limit: number;
 }> {
-  return apiRequest(`/order/my-bookings?page=${page}&limit=${limit}`, {
+  return apiRequest(`/bff/order/my-bookings?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -289,7 +286,7 @@ export async function getAdminOrders(
   page: number;
   limit: number;
 }> {
-  let url = `/order/admin/list?page=${page}&limit=${limit}`;
+  let url = `/bff/order/admin/list?page=${page}&limit=${limit}`;
   if (status) url += `&status=${encodeURIComponent(status)}`;
   return apiRequest(url, {
     headers: getAuthHeaders(),
@@ -306,7 +303,7 @@ export async function approveOrder(orderId: string): Promise<{
   caretakerWaNumber: string;
   houseRules: string;
 }> {
-  return apiRequest(`/order/${encodeURIComponent(orderId)}/approve`, {
+  return apiRequest(`/bff/order/${encodeURIComponent(orderId)}/approve`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -320,7 +317,7 @@ export async function rejectOrder(orderId: string, reason: string): Promise<{
   status: string;
   message: string;
 }> {
-  return apiRequest(`/order/${encodeURIComponent(orderId)}/reject`, {
+  return apiRequest(`/bff/order/${encodeURIComponent(orderId)}/reject`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ reason }),
@@ -335,7 +332,7 @@ export async function checkInOrder(orderId: string): Promise<{
   status: string;
   message: string;
 }> {
-  return apiRequest(`/order/${encodeURIComponent(orderId)}/check-in`, {
+  return apiRequest(`/bff/order/${encodeURIComponent(orderId)}/check-in`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -349,7 +346,7 @@ export async function completeOrder(orderId: string): Promise<{
   status: string;
   message: string;
 }> {
-  return apiRequest(`/order/${encodeURIComponent(orderId)}/complete`, {
+  return apiRequest(`/bff/order/${encodeURIComponent(orderId)}/complete`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -359,7 +356,7 @@ export async function completeOrder(orderId: string): Promise<{
  * Get dashboard summary
  */
 export async function getDashboard(): Promise<DashboardResponse> {
-  return apiRequest('/order/admin/dashboard', {
+  return apiRequest('/bff/order/admin/dashboard', {
     headers: getAuthHeaders(),
   });
 }
@@ -372,7 +369,7 @@ export async function getRevenue(
   year: number,
   month?: number
 ): Promise<RevenueResponse> {
-  let url = `/order/admin/revenue?period=${period}&year=${year}`;
+  let url = `/bff/order/admin/revenue?period=${period}&year=${year}`;
   if (month) url += `&month=${month}`;
   return apiRequest(url, {
     headers: getAuthHeaders(),
@@ -389,7 +386,7 @@ export async function getAdminCustomPricingRules(
   rules: CustomPricingRuleResponse[];
   total: number;
 }> {
-  return apiRequest(`/order/admin/pricing/custom?page=${page}&limit=${limit}`, {
+  return apiRequest(`/bff/order/admin/pricing/custom?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -398,7 +395,7 @@ export async function getAdminCustomPricingRules(
  * Get default price rule
  */
 export async function getAdminDefaultPricingRule(): Promise<CustomPricingRuleResponse> {
-  return apiRequest('/order/admin/pricing/default', {
+  return apiRequest('/bff/order/admin/pricing/default', {
     headers: getAuthHeaders(),
   });
 }
@@ -407,7 +404,7 @@ export async function getAdminDefaultPricingRule(): Promise<CustomPricingRuleRes
  * Set default price rule
  */
 export async function setAdminDefaultPricingRule(amount: number): Promise<CustomPricingRuleResponse> {
-  return apiRequest('/order/admin/pricing/default', {
+  return apiRequest('/bff/order/admin/pricing/default', {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ amount }),
@@ -425,7 +422,7 @@ export async function createAdminCustomPricingRule(data: {
   label: string;
   dayOfWeek?: number[];
 }): Promise<CustomPricingRuleResponse> {
-  return apiRequest('/order/admin/pricing/custom', {
+  return apiRequest('/bff/order/admin/pricing/custom', {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -436,7 +433,7 @@ export async function createAdminCustomPricingRule(data: {
  * Delete a custom pricing rule by ID
  */
 export async function deleteAdminCustomPricingRule(id: string): Promise<{ message: string }> {
-  return apiRequest(`/order/admin/pricing/custom/${encodeURIComponent(id)}`, {
+  return apiRequest(`/bff/order/admin/pricing/custom/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -448,7 +445,7 @@ export async function deleteAdminCustomPricingRule(id: string): Promise<{ messag
 export async function getAdminBlockedDates(): Promise<{
   blocks: CustomPricingRuleResponse[];
 }> {
-  return apiRequest('/order/admin/pricing/blocks', {
+  return apiRequest('/bff/order/admin/pricing/blocks', {
     headers: getAuthHeaders(),
   });
 }
@@ -457,7 +454,7 @@ export async function getAdminBlockedDates(): Promise<{
  * Block a date
  */
 export async function createAdminBlockedDate(date: string, reason: string): Promise<CustomPricingRuleResponse> {
-  return apiRequest('/order/admin/pricing/block', {
+  return apiRequest('/bff/order/admin/pricing/block', {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ date, reason }),
@@ -468,7 +465,7 @@ export async function createAdminBlockedDate(date: string, reason: string): Prom
  * Unblock a date by block ID
  */
 export async function deleteAdminBlockedDate(id: string): Promise<{ message: string }> {
-  return apiRequest(`/order/admin/pricing/block/${encodeURIComponent(id)}`, {
+  return apiRequest(`/bff/order/admin/pricing/block/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -496,7 +493,7 @@ export async function getAdminGuests(
   if (params.search) search.set('search', params.search);
   if (params.sortBy) search.set('sortBy', params.sortBy);
 
-  return apiRequest(`/order/admin/guests?${search.toString()}`, {
+  return apiRequest(`/bff/order/admin/guests?${search.toString()}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -505,7 +502,7 @@ export async function getAdminGuests(
  * Get details and booking history for one guest
  */
 export async function getAdminGuestDetail(phone: string): Promise<AdminGuestDetailResponse> {
-  return apiRequest(`/order/admin/guests/${encodeURIComponent(phone)}`, {
+  return apiRequest(`/bff/order/admin/guests/${encodeURIComponent(phone)}`, {
     headers: getAuthHeaders(),
   });
 }

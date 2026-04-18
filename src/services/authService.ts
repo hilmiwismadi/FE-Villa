@@ -1,9 +1,6 @@
 import { ApiError } from './errors';
 
-const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
-const BASE_URL = USE_DEV_PROXY
-  ? ''
-  : import.meta.env.VITE_AUTH_SERVICE_URL || 'https://rekognizcy.izcy.tech';
+const BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
 
 export interface TokenResponse {
   access_token: string;
@@ -53,20 +50,20 @@ async function apiRequest<T>(
 }
 
 export async function login(username: string, password: string): Promise<TokenResponse> {
-  return apiRequest<TokenResponse>('/api/v1/auth/login', {
+  return apiRequest<TokenResponse>('/bff/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   });
 }
 
 export async function getCurrentUser(accessToken: string): Promise<UserInfo> {
-  return apiRequest<UserInfo>('/api/v1/auth/me', {
+  return apiRequest<UserInfo>('/bff/auth/me', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
-  return apiRequest<TokenResponse>('/api/v1/auth/refresh', {
+  return apiRequest<TokenResponse>('/bff/auth/refresh', {
     method: 'POST',
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
@@ -74,7 +71,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenRes
 
 export async function logout(accessToken: string): Promise<void> {
   try {
-    await apiRequest<void>('/api/v1/auth/logout', {
+    await apiRequest<void>('/bff/auth/logout', {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
     });

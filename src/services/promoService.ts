@@ -5,10 +5,7 @@
 
 import { ApiError } from './errors';
 
-const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 'true';
-const BASE_URL = USE_DEV_PROXY
-  ? ''
-  : import.meta.env.VITE_PROMO_SERVICE_URL || 'https://yutaka-promo.izcy.tech';
+const BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
 
 // Common types
 export interface ValidatePromoRequest {
@@ -131,7 +128,7 @@ export async function validatePromo(data: ValidatePromoRequest): Promise<Validat
     checkOut: data.checkOut,
     guestPhone: data.guestPhone,
   });
-  return apiRequest<ValidatePromoResponse>(`/promo/validate?${params.toString()}`);
+  return apiRequest<ValidatePromoResponse>(`/bff/promo/validate?${params.toString()}`);
 }
 
 // ========== INTERNAL ENDPOINTS ==========
@@ -141,7 +138,7 @@ export async function validatePromo(data: ValidatePromoRequest): Promise<Validat
  * Note: This is typically called internally by OrderService, not directly from frontend.
  */
 export async function applyPromo(data: ApplyPromoRequest): Promise<ApplyPromoResponse> {
-  return apiRequest<ApplyPromoResponse>('/promo/apply', {
+  return apiRequest<ApplyPromoResponse>('/bff/promo/apply', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -182,7 +179,7 @@ export async function createPromo(data: {
   expiryDurationDays?: number;
   maxUsage?: number;
 }): Promise<PromoResponse> {
-  return apiRequest<PromoResponse>('/promo/admin/create', {
+  return apiRequest<PromoResponse>('/bff/promo/admin/create', {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -203,7 +200,7 @@ export async function listPromos(
   page: number;
   limit: number;
 }> {
-  let url = `/promo/admin/list?page=${page}&limit=${limit}`;
+  let url = `/bff/promo/admin/list?page=${page}&limit=${limit}`;
   if (type) url += `&type=${type}`;
   if (isActive !== undefined) url += `&isActive=${isActive}`;
   return apiRequest(url, {
@@ -215,7 +212,7 @@ export async function listPromos(
  * Get a single promo by code
  */
 export async function getPromo(id: string): Promise<PromoResponse> {
-  return apiRequest<PromoResponse>(`/promo/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<PromoResponse>(`/bff/promo/admin/${encodeURIComponent(id)}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -224,7 +221,7 @@ export async function getPromo(id: string): Promise<PromoResponse> {
  * Update an existing promo
  */
 export async function updatePromo(id: string, data: Partial<PromoResponse>): Promise<PromoResponse> {
-  return apiRequest<PromoResponse>(`/promo/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<PromoResponse>(`/bff/promo/admin/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -235,7 +232,7 @@ export async function updatePromo(id: string, data: Partial<PromoResponse>): Pro
  * Soft-delete (deactivate) a promo
  */
 export async function deactivatePromo(id: string): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(`/promo/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<{ message: string }>(`/bff/promo/admin/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -254,7 +251,7 @@ export async function getPromoUsage(
   page: number;
   limit: number;
 }> {
-  return apiRequest(`/promo/admin/${encodeURIComponent(id)}/usage?page=${page}&limit=${limit}`, {
+  return apiRequest(`/bff/promo/admin/${encodeURIComponent(id)}/usage?page=${page}&limit=${limit}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -274,7 +271,7 @@ export async function getAffiliateCodes(): Promise<{
     totalCommission: number;
   }>;
 }> {
-  return apiRequest('/promo/affiliate/codes', {
+  return apiRequest('/bff/promo/affiliate/codes', {
     headers: getAuthHeaders(),
   });
 }
@@ -289,7 +286,7 @@ export async function confirmCommission(orderId: string): Promise<{
   updated: number;
   message: string;
 }> {
-  return apiRequest(`/promo/internal/commission/confirm`, {
+  return apiRequest(`/bff/promo/internal/commission/confirm`, {
     method: 'POST',
     body: JSON.stringify({ orderId }),
   });
@@ -303,7 +300,7 @@ export async function cancelCommission(orderId: string): Promise<{
   updated: number;
   message: string;
 }> {
-  return apiRequest(`/promo/internal/commission/cancel`, {
+  return apiRequest(`/bff/promo/internal/commission/cancel`, {
     method: 'POST',
     body: JSON.stringify({ orderId }),
   });
@@ -317,7 +314,7 @@ export async function reverseUsage(orderId: string): Promise<{
   reversed: boolean;
   message: string;
 }> {
-  return apiRequest(`/promo/internal/usage/reverse`, {
+  return apiRequest(`/bff/promo/internal/usage/reverse`, {
     method: 'POST',
     body: JSON.stringify({ orderId }),
   });
@@ -330,5 +327,5 @@ export async function getAffiliatePromo(affiliatorId: string): Promise<{
   found: boolean;
   promoCode?: string;
 }> {
-  return apiRequest(`/promo/internal/affiliate-promo?affiliatorId=${encodeURIComponent(affiliatorId)}`);
+  return apiRequest(`/bff/promo/internal/affiliate-promo?affiliatorId=${encodeURIComponent(affiliatorId)}`);
 }
