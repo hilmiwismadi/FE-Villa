@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { PromoResponse, PromoUsage } from '../../services/promoService';
+import { useToast } from '../../contexts/ToastContext';
 import { createPromo, deactivatePromo, getPromoUsage, listPromos } from '../../services/promoService';
 
 type PromoSection = 'overview' | 'create' | 'usage' | 'commissions';
@@ -70,6 +71,7 @@ const formatExpiry = (promo: PromoResponse) => {
 };
 
 const PromosTab: React.FC = () => {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
   const activeSection: PromoSection = isPromoSection(section) ? section : 'overview';
@@ -818,6 +820,7 @@ const PromosTab: React.FC = () => {
           </div>
         ) : null}
     </section>
+
   );
 };
 

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BookingProvider } from './contexts/BookingContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { LanguageProvider } from './i18n/LanguageContext';
 import MainLayout from './layouts/MainLayout';
 import OwnerLayout from './layouts/OwnerLayout';
@@ -23,6 +24,7 @@ import CalendarTab from './pages/owner/CalendarTab';
 import PricingTab from './pages/owner/PricingTab';
 import UsersTab from './pages/owner/UsersTab';
 import PromosTab from './pages/owner/PromosTab';
+import AffiliatesTab from './pages/owner/AffiliatesTab';
 import AffiliateDashboard from './pages/affiliate/DashboardTab';
 import CodesTab from './pages/affiliate/CodesTab';
 import BookingsTab from './pages/affiliate/BookingsTab';
@@ -32,8 +34,9 @@ import MarketingTab from './pages/affiliate/MarketingTab';
 function App() {
   return (
     <AuthProvider>
-      <BookingProvider>
-        <Router>
+      <ToastProvider>
+        <BookingProvider>
+          <Router>
           <Routes>
             {/* Indonesian (default) */}
             <Route path="/" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
@@ -77,6 +80,7 @@ function App() {
                 <Route path="calendar" element={<CalendarTab />} />
                 <Route path="pricing" element={<PricingTab />} />
                 <Route path="users" element={<UsersTab />} />
+                <Route path="affiliates" element={<AffiliatesTab />} />
                 <Route path="promos">
                   <Route index element={<Navigate to="overview" replace />} />
                   <Route path=":section" element={<PromosTab />} />
@@ -96,7 +100,8 @@ function App() {
             </Route>
           </Routes>
         </Router>
-      </BookingProvider>
+        </BookingProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

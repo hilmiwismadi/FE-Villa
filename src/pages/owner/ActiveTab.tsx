@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import type { OrderResponse } from '../../services/orderService';
 import { getAdminOrders, checkInOrder, completeOrder, ApiError } from '../../services/orderService';
+import { useToast } from '../../contexts/ToastContext';
 
 type ActiveBooking = OrderResponse;
 
 const ActiveTab: React.FC = () => {
+  const { toast } = useToast();
   const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +44,13 @@ const ActiveTab: React.FC = () => {
     try {
       setProcessing(orderId);
       await checkInOrder(orderId);
-      // Refresh list after successful check-in
+      toast('Guest checked in successfully', 'success');
       fetchActiveBookings();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(`Failed to check in: ${err.message}`);
+        toast(`Failed to check in: ${err.message}`, 'error');
       } else {
-        alert('Failed to check in');
+        toast('Failed to check in', 'error');
       }
     } finally {
       setProcessing(null);
@@ -59,13 +61,13 @@ const ActiveTab: React.FC = () => {
     try {
       setProcessing(orderId);
       await completeOrder(orderId);
-      // Refresh list after successful completion (order will move to completed)
+      toast('Order completed successfully', 'success');
       fetchActiveBookings();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(`Failed to complete order: ${err.message}`);
+        toast(`Failed to complete order: ${err.message}`, 'error');
       } else {
-        alert('Failed to complete order');
+        toast('Failed to complete order', 'error');
       }
     } finally {
       setProcessing(null);

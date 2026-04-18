@@ -1,51 +1,67 @@
-import React from 'react';
-import { bookingsUsingCode, formatCurrency, formatDate } from './data';
+import React, { useEffect, useState } from 'react';
+import { bffService } from '../../services/bffService';
+import { useToast } from '../../contexts/ToastContext';
+
+const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const BookingsTab: React.FC = () => {
+  const { toast } = useToast();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    bffService.getAffiliateDashboard()
+      .then((d) => setBookings(d.bookings || []))
+      .catch((e) => toast(e.message || 'Failed to load bookings', 'error'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center py-12 text-primary-600">Loading bookings...</div>;
+
   return (
     <div>
       <h3 className="text-2xl font-serif text-primary-900 mb-6">Bookings Using Your Codes</h3>
       <p className="text-primary-600 mb-6">Track all bookings made with your promo codes.</p>
 
       <div className="bg-white rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-primary-50">
-            <tr>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Booking ID</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Guest</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Check-in</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Promo Code</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Original Price</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Final Price</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Your Commission</th>
-              <th className="text-left p-4 text-sm font-medium text-primary-700">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookingsUsingCode.map((booking) => (
-              <tr key={booking.id} className="border-t border-primary-100">
-                <td className="p-4 text-primary-900 font-medium">{booking.id}</td>
-                <td className="p-4 text-primary-900">{booking.guestName}</td>
-                <td className="p-4 text-primary-700">{formatDate(booking.checkIn)}</td>
-                <td className="p-4">
-                  <span className="inline-block px-2 py-1 bg-gold-100 text-gold-800 text-xs rounded font-medium">
-                    {booking.promoCode}
-                  </span>
-                </td>
-                <td className="p-4 text-primary-700 line-through">{formatCurrency(booking.originalPrice)}</td>
-                <td className="p-4 text-primary-900 font-medium">{formatCurrency(booking.finalPrice)}</td>
-                <td className="p-4 text-gold-600 font-semibold">{formatCurrency(booking.commission)}</td>
-                <td className="p-4">
-                  <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {booking.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-                  </span>
-                </td>
+        {bookings.length === 0 ? (
+          <p className="p-6 text-primary-500">No bookings yet.</p>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-primary-50">
+              <tr>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Order ID</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Guest</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Promo Code</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Total</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Commission</th>
+                <th className="text-left p-4 text-sm font-medium text-primary-700">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {bookings.map((b: any, i: number) => (
+                <tr key={i} className="border-t border-primary-100">
+                  <td className="p-4 text-primary-900 font-medium">{b.orderId}</td>
+                  <td className="p-4 text-primary-900">{b.guestName || '—'}</td>
+                  <td className="p-4">
+                    <span className="inline-block px-2 py-1 bg-gold-100 text-gold-800 text-xs rounded font-medium">
+                      {b.promoCode || '—'}
+                    </span>
+                  </td>
+                  <td className="p-4 text-primary-900 font-medium">{fmt(b.totalAmount || 0)}</td>
+                  <td className="p-4 text-gold-600 font-semibold">{fmt(b.commissionAmount || 0)}</td>
+                  <td className="p-4">
+                    <span className={`inline-block px-3 py-1 text-sm rounded-full ${
+                      b.commissionStatus === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {b.commissionStatus === 'confirmed' ? 'Confirmed' : 'Pending'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

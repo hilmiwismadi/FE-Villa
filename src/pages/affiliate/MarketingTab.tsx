@@ -1,12 +1,14 @@
 import React from 'react';
+import { useToast } from '../../contexts/ToastContext';
 import { promoCodes } from './data';
 
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text);
-  alert('Copied to clipboard!');
-};
-
 const MarketingTab: React.FC = () => {
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast('Copied to clipboard!', 'success');
+  };
   return (
     <div>
       <h3 className="text-2xl font-serif text-primary-900 mb-6">Marketing Materials</h3>

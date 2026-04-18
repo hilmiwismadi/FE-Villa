@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { OrderResponse } from '../../services/orderService';
 import { getAdminOrders, approveOrder, rejectOrder, ApiError } from '../../services/orderService';
+import { useToast } from '../../contexts/ToastContext';
 
 type PendingBooking = OrderResponse;
 const REJECTION_REASON_OPTIONS = [
@@ -17,6 +18,7 @@ const normalizePhoneForWhatsApp = (phone: string) => {
 };
 
 const PendingTab: React.FC = () => {
+  const { toast } = useToast();
   const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,13 +92,12 @@ Pembayaran Anda telah diverifikasi dan booking sudah disetujui. Terima kasih.`
       // Remove from list after successful approval
       setPendingBookings(prev => prev.filter(b => b.orderId !== confirmModal.orderId));
       setConfirmModal(null);
-      setSuccessMessage('Order berhasil diterima');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      toast('Order berhasil diterima', 'success');
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(`Failed to approve order: ${err.message}`);
+        toast(`Failed to approve order: ${err.message}`, 'error');
       } else {
-        alert('Failed to approve order');
+        toast('Failed to approve order', 'error');
       }
     } finally {
       setProcessing(null);
@@ -135,13 +136,12 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
       setRejectModal(null);
       setRejectionReason('');
       setSelectedRejectionOption('');
-      setSuccessMessage('Order berhasil ditolak');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      toast('Order berhasil ditolak', 'success');
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(`Failed to reject order: ${err.message}`);
+        toast(`Failed to reject order: ${err.message}`, 'error');
       } else {
-        alert('Failed to reject order');
+        toast('Failed to reject order', 'error');
       }
     } finally {
       setProcessing(null);
