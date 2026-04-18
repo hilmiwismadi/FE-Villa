@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { bffService, type AffiliateDashboardData } from '../../services/bffService';
+import { useToast } from '../../contexts/ToastContext';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const AffiliateDashboard: React.FC = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<AffiliateDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     bffService.getAffiliateDashboard()
       .then(setData)
-      .catch((e) => setError(e.message))
+      .catch((e) => toast(e.message || 'Failed to load dashboard', 'error'))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="text-center py-12 text-primary-600">Loading dashboard...</div>;
-  if (error) return <div className="text-center py-12 text-red-600">{error}</div>;
-  if (!data) return null;
+  if (!data) return <div className="text-center py-12 text-primary-500">No data available.</div>;
 
   const { stats, codes, bookings } = data;
 

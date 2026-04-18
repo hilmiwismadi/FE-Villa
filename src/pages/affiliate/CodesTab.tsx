@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { bffService, type AffiliateDashboardData } from '../../services/bffService';
+import { useToast } from '../../contexts/ToastContext';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
-const copyToClipboard = (text: string) => { navigator.clipboard.writeText(text); alert('Copied!'); };
 
 const CodesTab: React.FC = () => {
+  const { toast } = useToast();
   const [codes, setCodes] = useState<AffiliateDashboardData['codes']>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     bffService.getAffiliateDashboard()
       .then((d) => setCodes(d.codes))
-      .catch(() => {})
+      .catch((e) => toast(e.message || 'Failed to load codes', 'error'))
       .finally(() => setLoading(false));
   }, []);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast('Copied to clipboard!', 'success');
+  };
 
   if (loading) return <div className="text-center py-12 text-primary-600">Loading codes...</div>;
 

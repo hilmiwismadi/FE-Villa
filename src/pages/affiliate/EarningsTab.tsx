@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { bffService, type AffiliateDashboardData } from '../../services/bffService';
+import { useToast } from '../../contexts/ToastContext';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const EarningsTab: React.FC = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<AffiliateDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     bffService.getAffiliateDashboard()
       .then(setData)
-      .catch(() => {})
+      .catch((e) => toast(e.message || 'Failed to load earnings', 'error'))
       .finally(() => setLoading(false));
   }, []);
 

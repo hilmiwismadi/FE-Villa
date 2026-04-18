@@ -1,49 +1,75 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
-
-const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+import { useToast } from '../../contexts/ToastContext';
 
 const AffiliatesTab: React.FC = () => {
+  const { toast } = useToast();
   const [affiliates, setAffiliates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showAddCode, setShowAddCode] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', commissionRate: 0, code: '', discountType: 'percentage', discountValue: 10 });
+  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', phone: '' });
+  const [codeForm, setCodeForm] = useState({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 });
 
   const load = () => {
     bffService.listAffiliates()
       .then((a) => setAffiliates(a as any[] || []))
-      .catch(() => {})
+      .catch((e) => toast(e.message || 'Failed to load affiliates', 'error'))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
 
   const handleCreate = async () => {
-    await bffService.createAffiliate({ name: form.name, email: form.email, password: form.password, phone: form.phone, commissionRate: form.commissionRate, discountType: form.discountType, discountValue: form.discountValue });
-    setForm({ name: '', email: '', password: '', phone: '', commissionRate: 0, code: '', discountType: 'percentage', discountValue: 10 });
-    setShowCreate(false);
-    load();
+    try {
+      await bffService.createAffiliate({ name: createForm.name, email: createForm.email, password: createForm.password, phone: createForm.phone });
+      toast('Affiliate created successfully', 'success');
+      setCreateForm({ name: '', email: '', password: '', phone: '' });
+      setShowCreate(false);
+      load();
+    } catch (e: any) {
+      toast(e.message || 'Failed to create affiliate', 'error');
+    }
   };
 
   const handleAddCode = async (affiliateId: string) => {
-    await bffService.addAffiliateCode(affiliateId, form.code, form.commissionRate, form.discountType, form.discountValue);
-    setForm(prev => ({ ...prev, code: '' }));
-    setShowAddCode(null);
-    load();
+    try {
+      await bffService.addAffiliateCode(affiliateId, {
+        code: codeForm.code,
+        commissionRate: codeForm.commissionRate,
+        discountType: codeForm.discountType,
+        discountValue: codeForm.discountValue,
+      });
+      toast('Promo code added successfully', 'success');
+      setCodeForm({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 });
+      setShowAddCode(null);
+      load();
+    } catch (e: any) {
+      toast(e.message || 'Failed to add code', 'error');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this affiliate and their login account?')) {
-      await bffService.deleteAffiliate(id);
-      load();
+      try {
+        await bffService.deleteAffiliate(id);
+        toast('Affiliate deleted', 'success');
+        load();
+      } catch (e: any) {
+        toast(e.message || 'Failed to delete affiliate', 'error');
+      }
     }
   };
 
   const handleRemoveCode = async (id: string, code: string) => {
     if (confirm(`Remove code "${code}"?`)) {
-      await bffService.removeAffiliateCode(id, code);
-      load();
+      try {
+        await bffService.removeAffiliateCode(id, code);
+        toast('Code removed', 'success');
+        load();
+      } catch (e: any) {
+        toast(e.message || 'Failed to remove code', 'error');
+      }
     }
   };
 
@@ -59,18 +85,10 @@ const AffiliatesTab: React.FC = () => {
         <div className="bg-white rounded-lg p-8 mb-8 border border-gold-200">
           <h3 className="text-lg font-serif text-primary-900 mb-4">New Affiliate</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" className="input-field" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input type="email" className="input-field" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <input type="password" className="input-field" placeholder="Login Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-            <input type="text" className="input-field" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            <input type="number" className="input-field" placeholder="Commission Rate (per booking)" value={form.commissionRate || ''} onChange={(e) => setForm({ ...form, commissionRate: Number(e.target.value) })} />
-            <div className="grid grid-cols-2 gap-2">
-              <select className="input-field" value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
-                <option value="percentage">Discount %</option>
-                <option value="fixed">Discount Fixed</option>
-              </select>
-              <input type="number" className="input-field" placeholder="Value" value={form.discountValue || ''} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />
-            </div>
+            <input type="text" className="input-field" placeholder="Name" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
+            <input type="email" className="input-field" placeholder="Email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
+            <input type="password" className="input-field" placeholder="Login Password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
+            <input type="text" className="input-field" placeholder="Phone" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} />
           </div>
           <div className="flex gap-3 mt-4">
             <button className="btn-primary" onClick={handleCreate}>Create</button>
@@ -89,13 +107,12 @@ const AffiliatesTab: React.FC = () => {
                 <div>
                   <h4 className="text-lg font-semibold text-primary-900">{a.name}</h4>
                   <p className="text-sm text-primary-600">{a.email} {a.phone && `· ${a.phone}`}</p>
-                  <p className="text-xs text-primary-500 mt-1">Commission: {fmt(a.metadata?.commissionRate || 0)} / booking</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs px-2 py-1 rounded-full ${a.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {a.is_active ? 'Active' : 'Inactive'}
                   </span>
-                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setForm(prev => ({ ...prev, commissionRate: a.metadata?.commissionRate || 0 })); }}>Add Code</button>
+                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setCodeForm({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 }); }}>Add Code</button>
                   <button className="text-sm text-red-600 hover:text-red-800" onClick={() => handleDelete(a.id)}>Delete</button>
                 </div>
               </div>
@@ -118,17 +135,30 @@ const AffiliatesTab: React.FC = () => {
               )}
 
               {showAddCode === a.id && (
-                <div className="border-t border-primary-200 mt-3 pt-4">
-                  <div className="flex gap-3 items-end">
-                    <div className="flex-1">
+                <div className="border-t border-primary-200 mt-3 pt-4 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
                       <label className="text-sm text-primary-700">Code</label>
-                      <input type="text" className="input-field mt-1" placeholder="e.g., TRAVEL10" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
+                      <input type="text" className="input-field mt-1" placeholder="e.g., TRAVEL10" value={codeForm.code} onChange={(e) => setCodeForm({ ...codeForm, code: e.target.value.toUpperCase() })} />
                     </div>
-                    <div className="w-24">
+                    <div>
                       <label className="text-sm text-primary-700">Commission</label>
-                      <input type="number" className="input-field mt-1" value={form.commissionRate || ''} onChange={(e) => setForm({ ...form, commissionRate: Number(e.target.value) })} />
+                      <input type="number" className="input-field mt-1" value={codeForm.commissionRate || ''} onChange={(e) => setCodeForm({ ...codeForm, commissionRate: Number(e.target.value) })} />
                     </div>
-                    <button className="btn-primary" onClick={() => handleAddCode(a.id)}>Add</button>
+                    <div>
+                      <label className="text-sm text-primary-700">Discount Type</label>
+                      <select className="input-field mt-1" value={codeForm.discountType} onChange={(e) => setCodeForm({ ...codeForm, discountType: e.target.value })}>
+                        <option value="percentage">Percentage %</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm text-primary-700">Discount Value</label>
+                      <input type="number" className="input-field mt-1" value={codeForm.discountValue || ''} onChange={(e) => setCodeForm({ ...codeForm, discountValue: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button className="btn-primary" onClick={() => handleAddCode(a.id)}>Add Code</button>
                     <button className="btn-secondary" onClick={() => setShowAddCode(null)}>Cancel</button>
                   </div>
                 </div>

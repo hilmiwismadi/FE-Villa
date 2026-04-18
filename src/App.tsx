@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { BookingProvider } from './contexts/BookingContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { LanguageProvider } from './i18n/LanguageContext';
 import MainLayout from './layouts/MainLayout';
 import OwnerLayout from './layouts/OwnerLayout';
@@ -33,8 +34,9 @@ import MarketingTab from './pages/affiliate/MarketingTab';
 function App() {
   return (
     <AuthProvider>
-      <BookingProvider>
-        <Router>
+      <ToastProvider>
+        <BookingProvider>
+          <Router>
           <Routes>
             {/* Indonesian (default) */}
             <Route path="/" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
@@ -95,7 +97,8 @@ function App() {
             </Route>
           </Routes>
         </Router>
-      </BookingProvider>
+        </BookingProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

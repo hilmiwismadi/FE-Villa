@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
+import { useToast } from '../../contexts/ToastContext';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const BookingsTab: React.FC = () => {
+  const { toast } = useToast();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     bffService.getAffiliateDashboard()
       .then((d) => setBookings(d.bookings || []))
-      .catch(() => {})
+      .catch((e) => toast(e.message || 'Failed to load bookings', 'error'))
       .finally(() => setLoading(false));
   }, []);
 

@@ -26,7 +26,8 @@ async function bffRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new ApiError(errorData?.error || `HTTP ${response.status}`, response.status, errorData);
+      const message = errorData?.details?.message || errorData?.error || `HTTP ${response.status}`;
+      throw new ApiError(message, response.status, errorData);
     }
     return response.json();
   } catch (error) {
@@ -101,9 +102,6 @@ export const bffService = {
     email: string;
     password: string;
     phone?: string;
-    commissionRate: number;
-    discountType?: string;
-    discountValue?: number;
   }) => bffRequest<{ user: any; affiliate: Affiliate }>('/bff/affiliate/create', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -122,10 +120,15 @@ export const bffService = {
     method: 'DELETE',
   }),
 
-  addAffiliateCode: (id: string, code: string, commissionRate: number, discountType?: string, discountValue?: number) =>
+  addAffiliateCode: (id: string, data: {
+    code: string;
+    commissionRate: number;
+    discountType: string;
+    discountValue: number;
+  }) =>
     bffRequest<{ message: string }>(`/bff/affiliate/${id}/code`, {
       method: 'POST',
-      body: JSON.stringify({ code, commissionRate, discountType, discountValue }),
+      body: JSON.stringify(data),
     }),
 
   removeAffiliateCode: (id: string, code: string) =>
@@ -149,6 +152,11 @@ export const bffService = {
 
   deactivatePromo: (code: string) => bffRequest<{ message: string }>(`/bff/promo/${encodeURIComponent(code)}`, {
     method: 'DELETE',
+  }),
+
+  createPromo: (data: Record<string, unknown>) => bffRequest<any>('/bff/promo/create', {
+    method: 'POST',
+    body: JSON.stringify(data),
   }),
 };
 

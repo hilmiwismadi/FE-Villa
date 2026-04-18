@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
-import { createPromo } from '../../services/promoService';
+import { useToast } from '../../contexts/ToastContext';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const PromosTab: React.FC = () => {
+  const { toast } = useToast();
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -24,33 +25,46 @@ const PromosTab: React.FC = () => {
   const load = () => {
     bffService.listPromos('automatic')
       .then((p) => setPromos((p as any).promos?.filter((pr: any) => pr.type === 'automatic') || []))
-      .catch(() => {})
+      .catch((e) => toast(e.message || 'Failed to load promos', 'error'))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
 
   const handleCreate = async () => {
-    await createPromo({
-      code: form.code,
-      type: 'automatic',
-      discountType: form.discountType,
-      discountValue: form.discountValue,
-      dayCondition: form.dayCondition,
-      expiryType: form.expiryType,
-      expiryDate: form.expiryType === 'date' ? form.expiryDate : undefined,
-      expiryDurationDays: form.expiryType === 'duration_days' ? form.expiryDurationDays : undefined,
-      maxUsage: form.maxUsage || undefined,
-      triggerType: form.triggerType || undefined,
-      triggerThreshold: form.triggerThreshold || undefined,
-    });
-    setForm({ code: '', discountType: 'percentage', discountValue: 10, dayCondition: 'all', expiryType: 'none', expiryDate: '', expiryDurationDays: 30, maxUsage: 0, triggerType: '', triggerThreshold: 0 });
-    setShowCreate(false);
-    load();
+    try {
+      await bffService.createPromo({
+        code: form.code,
+        type: 'automatic',
+        discountType: form.discountType,
+        discountValue: form.discountValue,
+        dayCondition: form.dayCondition,
+        expiryType: form.expiryType,
+        expiryDate: form.expiryType === 'date' ? form.expiryDate : undefined,
+        expiryDurationDays: form.expiryType === 'duration_days' ? form.expiryDurationDays : undefined,
+        maxUsage: form.maxUsage || undefined,
+        triggerType: form.triggerType || undefined,
+        triggerThreshold: form.triggerThreshold || undefined,
+      });
+      toast('Promo created successfully', 'success');
+      setForm({ code: '', discountType: 'percentage', discountValue: 10, dayCondition: 'all', expiryType: 'none', expiryDate: '', expiryDurationDays: 30, maxUsage: 0, triggerType: '', triggerThreshold: 0 });
+      setShowCreate(false);
+      load();
+    } catch (e: any) {
+      toast(e.message || 'Failed to create promo', 'error');
+    }
   };
 
   const handleDeactivate = async (code: string) => {
-    if (confirm(`Deactivate promo "${code}"?`)) { await bffService.deactivatePromo(code); load(); }
+    if (confirm(`Deactivate promo "${code}"?`)) {
+      try {
+        await bffService.deactivatePromo(code);
+        toast('Promo deactivated', 'success');
+        load();
+      } catch (e: any) {
+        toast(e.message || 'Failed to deactivate promo', 'error');
+      }
+    }
   };
 
   if (loading) return <div className="text-center py-12 text-primary-600">Loading promos...</div>;
