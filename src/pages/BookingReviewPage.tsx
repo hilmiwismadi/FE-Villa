@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
 import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderService';
+import { normalizePhoneNumber } from '../utils/phone';
 
 const orderCreateInFlight = new Map<string, Promise<OrderResponse>>();
 
@@ -44,15 +45,6 @@ const formatEstimatedCheckIn = (timeSlot: string): '14-16' | '16-18' | '18-20' |
   return estimatedMap[timeSlot] ?? '14-16';
 }
 
-function normalizePhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('0')) return digits;
-  if (digits.startsWith('62')) return `0${digits.slice(2)}`;
-  if (digits.startsWith('8')) return `0${digits}`;
-  return digits;
-}
-
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, lang } = useTranslation();
@@ -67,18 +59,11 @@ const BookingReviewPage: React.FC = () => {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   const [orderResponse, setOrderResponse] = useState<OrderResponse | null>(null);
-  const orderCreatedRef = useRef(false); // Prevent duplicate API calls
+  const orderCreatedRef = useRef(false);
 
-  const numberOfNights = dateRange.checkIn && dateRange.checkOut
-    ? differenceInDays(dateRange.checkOut, dateRange.checkIn)
-    : 0;
-  const guest = guestInfo || formData;
-  const dateLocale = lang === 'id' ? 'id-ID' : 'en-US';
-
-  // Create order on mount if guestInfo has data but no orderId
   useEffect(() => {
-    // Prevent duplicate API calls
-    if (orderCreatedRef.current) {
+    const orderKey = `order-created-${formData.fullName}-${formData.phone}`;
+    if (orderCreatedRef.current || sessionStorage.getItem(orderKey)) {
       return;
     }
 
@@ -92,13 +77,11 @@ const BookingReviewPage: React.FC = () => {
           const existingOrder = await getOrder(guestInfo.orderId || '');
           setOrderResponse(existingOrder);
           orderCreatedRef.current = true;
-          const flatTotal = existingOrder.subtotal - existingOrder.discountAmount;
 
-          // Update pricing with actual values from existing order
           setPricing({
             originalPrice: existingOrder.subtotal + existingOrder.discountAmount,
             discountAmount: existingOrder.discountAmount,
-            finalPrice: flatTotal,
+            finalPrice: existingOrder.totalAmount,
           });
 
           // Update guestInfo with existing order details
@@ -106,7 +89,7 @@ const BookingReviewPage: React.FC = () => {
             ...formData,
             ...guestInfo,
             orderId: existingOrder.orderId,
-            totalAmount: flatTotal,
+            totalAmount: existingOrder.totalAmount,
             paymentDeadline: existingOrder.paymentDeadline,
           });
         } catch (error) {
@@ -168,21 +151,20 @@ const BookingReviewPage: React.FC = () => {
 
         const response: OrderResponse = await createOrderDeduped(orderData);
         setOrderResponse(response);
-        orderCreatedRef.current = true; // Mark as created
-        const flatTotal = response.subtotal - response.discountAmount;
+        orderCreatedRef.current = true;
+        sessionStorage.setItem(orderKey, '1');
 
-        // Update pricing with actual values from API response
         setPricing({
           originalPrice: response.subtotal + response.discountAmount,
           discountAmount: response.discountAmount,
-          finalPrice: flatTotal,
+          finalPrice: response.totalAmount,
         });
 
         // Update guestInfo with orderId
         setGuestInfo({
           ...formData,
           orderId: response.orderId,
-          totalAmount: flatTotal,
+          totalAmount: response.totalAmount,
           paymentDeadline: response.paymentDeadline,
         });
       } catch (error) {
@@ -381,7 +363,7 @@ const BookingReviewPage: React.FC = () => {
               )}
               {appliedPromo && (
                 <div className="flex justify-between text-green-600">
-                  <span>{t.booking.review.discount.replace('{code}', appliedPromo.code).replace('{percent}', String(appliedPromo.discountPercentage))}</span>
+                  <span>{t.booking.review.discount.replace('{code}', appliedPromo.code).replace('{percent}', appliedPromo.discountType === 'fixed' ? `Rp${appliedPromo.discountPercentage.toLocaleString()}` : `${appliedPromo.discountPercentage}%`)}</span>
                   <span>- IDR {pricing.discountAmount.toLocaleString()}</span>
                 </div>
               )}

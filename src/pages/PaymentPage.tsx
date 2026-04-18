@@ -169,10 +169,8 @@ const PaymentPage: React.FC = () => {
       await confirmPayment(orderResponse.orderId);
       console.log('[PaymentPage] confirmPayment API succeeded');
 
-      // Set payment confirmed flag
-      paymentConfirmedRef.current = true;
+      resetBooking();
 
-      // Navigate to booking submission page after successful confirmation
       const targetPath = localePath(`/book/confirmation/${orderResponse.orderId}`);
       console.log('[PaymentPage] Current path:', window.location.pathname);
       console.log('[PaymentPage] Target path:', targetPath);
@@ -290,7 +288,7 @@ const PaymentPage: React.FC = () => {
             </div>
             {timeLeft > 0 && (
               <div className={`text-right text-xs ${timeLeft <= 60 ? 'text-red-500' : 'text-gold-600'}`}>
-                <p className="font-medium">10 menit</p>
+                <p className="font-medium">{Math.ceil(timeLeft / 60)} menit tersisa</p>
                 <p>batas waktu</p>
               </div>
             )}

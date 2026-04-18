@@ -4,17 +4,7 @@ import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
-
-const normalizePhoneNumber = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('0')) return digits;
-  if (digits.startsWith('62')) return `0${digits.slice(2)}`;
-  if (digits.startsWith('8')) return `0${digits}`;
-  return digits;
-};
-
-const isValidPhoneNumber = (value: string) => /^08\d{8,13}$/.test(value);
+import { normalizePhoneNumber, isValidPhoneNumber } from '../utils/phone';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -493,6 +483,21 @@ const BookingFormPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Alamat */}
+                <div>
+                  <label className="block text-sm font-medium text-primary-900 mb-2">
+                    {t.booking.form.address}
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleFormChange}
+                    className="input-field"
+                    placeholder={t.booking.form.addressPlaceholder || 'Alamat lengkap (opsional)'}
+                  />
+                </div>
+
                 {/* Jumlah Orang & Extra Bed */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -566,6 +571,21 @@ const BookingFormPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Catatan Khusus */}
+                <div>
+                  <label className="block text-sm font-medium text-primary-900 mb-2">
+                    {t.booking.form.specialRequests || 'Catatan Khusus'}
+                  </label>
+                  <textarea
+                    name="specialRequests"
+                    value={formData.specialRequests}
+                    onChange={handleFormChange}
+                    className="input-field min-h-[80px]"
+                    placeholder={t.booking.form.specialRequestsPlaceholder || 'Permintaan khusus (opsional)'}
+                    rows={3}
+                  />
+                </div>
+
               </form>
             </div>
 
@@ -612,7 +632,7 @@ const BookingFormPage: React.FC = () => {
                   )}
                   {appliedPromo && (
                     <div className="flex justify-between text-green-600 mt-2">
-                      <span>{t.booking.calendar.discount} ({appliedPromo.discountPercentage}%)</span>
+                      <span>{t.booking.calendar.discount} ({appliedPromo.discountType === 'fixed' ? `Rp${appliedPromo.discountPercentage.toLocaleString()}` : `${appliedPromo.discountPercentage}%`})</span>
                       <span>- IDR {pricing.discountAmount.toLocaleString()}</span>
                     </div>
                   )}
@@ -659,7 +679,7 @@ const BookingFormPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-green-900">{appliedPromo.code}</p>
-                        <p className="text-xs text-green-700">{appliedPromo.discountPercentage}% {t.booking.calendar.discount.toLowerCase()}</p>
+                        <p className="text-xs text-green-700">{appliedPromo.discountType === 'fixed' ? `Rp${appliedPromo.discountPercentage.toLocaleString()}` : `${appliedPromo.discountPercentage}%`} {t.booking.calendar.discount.toLowerCase()}</p>
                       </div>
                       <button onClick={handleRemovePromo} className="text-red-600 hover:text-red-800 text-xs underline">{t.booking.calendar.remove}</button>
                     </div>
