@@ -47,7 +47,7 @@ const formatEstimatedCheckIn = (timeSlot: string): '14-16' | '16-18' | '18-20' |
 
 const BookingReviewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { t, localePath, lang } = useTranslation();
+  const { t, localePath } = useTranslation();
   const {
     dateRange, guestInfo, formData, appliedPromo, setAppliedPromo,
     pricing, setPricing, promoCode, setPromoCode, setGuestInfo,
@@ -197,6 +197,9 @@ const BookingReviewPage: React.FC = () => {
     return null;
   }
 
+  const guest = formData;
+  const numberOfNights = dateRange.checkIn && dateRange.checkOut ? Math.max(1, differenceInDays(dateRange.checkOut, dateRange.checkIn)) : 1;
+
   const handleApplyPromo = async () => {
     setPromoError('');
     setPromoSuccess('');
@@ -289,11 +292,11 @@ const BookingReviewPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-primary-700">
               <div>
                 <p className="text-sm text-primary-600">{t.booking.review.checkIn}</p>
-                <p className="font-medium">{dateRange.checkIn.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="font-medium">{dateRange.checkIn.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
               <div>
                 <p className="text-sm text-primary-600">{t.booking.review.checkOut}</p>
-                <p className="font-medium">{dateRange.checkOut.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="font-medium">{dateRange.checkOut.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
             </div>
             <p className="mt-3 text-sm text-primary-600">{numberOfNights} {t.booking.review.nightLabel}</p>
@@ -355,10 +358,10 @@ const BookingReviewPage: React.FC = () => {
                 <span>{t.booking.review.basePrice.replace('{nights}', String(numberOfNights))}</span>
                 <span>IDR {pricing.originalPrice.toLocaleString()}</span>
               </div>
-              {guest.extraBed > 0 && (
+              {Number(guest.extraBed || 0) > 0 && (
                 <div className="flex justify-between text-primary-700">
                   <span>Bed Tambahan ({guest.extraBed} × Rp100.000)</span>
-                  <span>IDR {(guest.extraBed * 100000).toLocaleString()}</span>
+                  <span>IDR {(Number(guest.extraBed || 0) * 100000).toLocaleString()}</span>
                 </div>
               )}
               {appliedPromo && (
@@ -370,7 +373,7 @@ const BookingReviewPage: React.FC = () => {
               <div className="pt-3 border-t border-primary-200">
                 <div className="flex justify-between font-semibold text-xl text-primary-900">
                   <span>{t.booking.review.total}</span>
-                  <span>IDR {(pricing.finalPrice + (guest.extraBed * 100000)).toLocaleString()}</span>
+                  <span>IDR {(pricing.finalPrice + (Number(guest.extraBed || 0) * 100000)).toLocaleString()}</span>
                 </div>
               </div>
             </div>

@@ -30,7 +30,7 @@ const PendingTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'calendar'>('card');
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successMessage, _setSuccessMessage] = useState<string | null>(null);
 
   // Fetch pending bookings on mount (both in_transaction and pending)
   const fetchPendingBookings = async () => {

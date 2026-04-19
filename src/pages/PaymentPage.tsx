@@ -32,9 +32,6 @@ const PaymentPage: React.FC = () => {
   // Note: We use a ref to prevent this from running again after resetBooking
   const hasMountedRef = React.useRef(false);
 
-  // Track if user has confirmed payment (to prevent redirect loop)
-  const paymentConfirmedRef = React.useRef(false);
-
   // Track if we're currently fetching to prevent double-invocation in React 18 strict mode
   const isFetchingRef = React.useRef(false);
 

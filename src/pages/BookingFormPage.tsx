@@ -506,7 +506,7 @@ const BookingFormPage: React.FC = () => {
                     </label>
                     <select
                       name="numberOfGuests"
-                      value={formData.numberOfGuests <= 10 ? '1-10' : formData.numberOfGuests <= 20 ? '11-20' : formData.numberOfGuests <= 25 ? '21-25' : '25+'}
+                      value={Number(formData.numberOfGuests || 1) <= 10 ? '1-10' : Number(formData.numberOfGuests || 1) <= 20 ? '11-20' : Number(formData.numberOfGuests || 1) <= 25 ? '21-25' : '25+'}
                       onChange={(e) => handleGuestCountChange(e.target.value)}
                       className="input-field"
                       required
@@ -516,7 +516,7 @@ const BookingFormPage: React.FC = () => {
                       <option value="21-25">21-25 orang</option>
                       <option value="25+">25+ orang</option>
                     </select>
-                    {formData.numberOfGuests > 25 && (
+                    {Number(formData.numberOfGuests || 1) > 25 && (
                       <p className="text-xs text-primary-600 mt-1">
                         Jumlah tamu: {formData.numberOfGuests} orang
                       </p>
@@ -539,9 +539,9 @@ const BookingFormPage: React.FC = () => {
                         </option>
                       ))}
                     </select>
-                    {formData.extraBed > 0 && (
+                    {Number(formData.extraBed || 0) > 0 && (
                       <p className="text-xs text-primary-600 mt-1">
-                        Total biaya bed tambahan: Rp{(formData.extraBed * 100000).toLocaleString()}
+                        Total biaya bed tambahan: Rp{(Number(formData.extraBed || 0) * 100000).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -624,10 +624,10 @@ const BookingFormPage: React.FC = () => {
                     <span>IDR {(pricing.originalPrice / (nightCount || 1)).toLocaleString()} × {nightCount} {t.booking.form.nightLabel}</span>
                     <span>IDR {pricing.originalPrice.toLocaleString()}</span>
                   </div>
-                  {formData.extraBed > 0 && (
+                  {Number(formData.extraBed || 0) > 0 && (
                     <div className="flex justify-between text-primary-700 mt-2">
                       <span>Bed Tambahan ({formData.extraBed} × Rp100.000)</span>
-                      <span>IDR {(formData.extraBed * 100000).toLocaleString()}</span>
+                      <span>IDR {(Number(formData.extraBed || 0) * 100000).toLocaleString()}</span>
                     </div>
                   )}
                   {appliedPromo && (
@@ -639,7 +639,7 @@ const BookingFormPage: React.FC = () => {
                   <div className="pt-3 mt-3 border-t border-primary-200">
                     <div className="flex justify-between font-semibold text-lg text-primary-900">
                       <span>{t.booking.calendar.total}</span>
-                      <span>IDR {(pricing.finalPrice + (formData.extraBed * 100000)).toLocaleString()}</span>
+                      <span>IDR {(pricing.finalPrice + (Number(formData.extraBed || 0) * 100000)).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

@@ -71,7 +71,7 @@ const formatExpiry = (promo: PromoResponse) => {
 };
 
 const PromosTab: React.FC = () => {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
   const activeSection: PromoSection = isPromoSection(section) ? section : 'overview';
