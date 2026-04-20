@@ -4,6 +4,7 @@ import { format, addDays } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import Calendar from '../components/Calendar';
+import { useToast } from '../contexts/ToastContext';
 import AvailabilityErrorModal from '../components/AvailabilityErrorModal';
 import type { CalendarDay } from '../types';
 import {
@@ -20,6 +21,7 @@ const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, localePath, dateFnsLocale } = useTranslation();
+  const { toast } = useToast();
 
   console.log('[BookingCalendarPage] Component mounted!');
   console.log('[BookingCalendarPage] Current path:', window.location.pathname);
@@ -271,6 +273,9 @@ const BookingCalendarPage: React.FC = () => {
     const code = (promoCodeInput ?? promoCode).trim().toUpperCase();
     if (!derivedCheckIn || !derivedCheckOut || !code) {
       setValidatingPromo(false);
+      if (code && (!derivedCheckIn || !derivedCheckOut)) {
+        setPromoError('Pilih tanggal terlebih dahulu sebelum menggunakan kode promo');
+      }
       return;
     }
 
@@ -341,12 +346,12 @@ const BookingCalendarPage: React.FC = () => {
 
   const handleContinue = async () => {
     if (selectedDates.length < 1) {
-      alert('Silakan pilih tanggal untuk menginap');
+      toast('Silakan pilih tanggal untuk menginap', 'error');
       return;
     }
 
     if (!derivedCheckIn || !derivedCheckOut) {
-      alert('Silakan pilih tanggal untuk menginap');
+      toast('Silakan pilih tanggal untuk menginap', 'error');
       return;
     }
 
@@ -365,7 +370,7 @@ const BookingCalendarPage: React.FC = () => {
       navigate(localePath('/book/form'));
     } catch (error) {
       console.error('[handleContinue] Availability check failed:', error);
-      alert('Failed to check availability. Please try again.');
+      toast('Failed to check availability. Please try again.', 'error');
     } finally {
       setCheckingAvailability(false);
     }

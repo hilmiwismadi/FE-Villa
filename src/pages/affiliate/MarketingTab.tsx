@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import { bffService, type AffiliateDashboardData } from '../../services/bffService';
 
+const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+
 const MarketingTab: React.FC = () => {
   const { toast } = useToast();
   const [codes, setCodes] = useState<AffiliateDashboardData['codes']>([]);
@@ -30,8 +32,8 @@ const MarketingTab: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-primary-700 mb-2">Website Link</label>
             <div className="flex gap-2">
-              <input type="text" value="https://yutaka.izcy.tech" readOnly className="input-field flex-1" />
-              <button onClick={() => copyToClipboard('https://yutaka.izcy.tech')} className="btn-secondary whitespace-nowrap">Copy</button>
+              <input type="text" value={PUBLIC_URL} readOnly className="input-field flex-1" />
+              <button onClick={() => copyToClipboard(PUBLIC_URL)} className="btn-secondary whitespace-nowrap">Copy</button>
             </div>
           </div>
           {codes.length === 0 && <p className="text-primary-500 text-sm">No promo codes assigned yet.</p>}
@@ -39,8 +41,8 @@ const MarketingTab: React.FC = () => {
             <div key={c.code}>
               <label className="block text-sm font-medium text-primary-700 mb-2">Booking Link — {c.code} ({c.discountType === 'percentage' ? `${c.discountValue}%` : ''} off)</label>
               <div className="flex gap-2">
-                <input type="text" value={`https://yutaka.izcy.tech/book?code=${c.code}`} readOnly className="input-field flex-1" />
-                <button onClick={() => copyToClipboard(`https://yutaka.izcy.tech/book?code=${c.code}`)} className="btn-secondary whitespace-nowrap">Copy</button>
+                <input type="text" value={`${PUBLIC_URL}/book?code=${c.code}`} readOnly className="input-field flex-1" />
+                <button onClick={() => copyToClipboard(`${PUBLIC_URL}/book?code=${c.code}`)} className="btn-secondary whitespace-nowrap">Copy</button>
               </div>
             </div>
           ))}
@@ -56,7 +58,7 @@ const MarketingTab: React.FC = () => {
               "Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code {primaryCode} for {primaryDiscount} off your booking! Link in bio."
             </p>
             <button
-              onClick={() => copyToClipboard(`Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code ${primaryCode} for ${primaryDiscount} off your booking! https://yutaka.izcy.tech/book?code=${primaryCode}`)}
+              onClick={() => copyToClipboard(`Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code ${primaryCode} for ${primaryDiscount} off your booking! ${PUBLIC_URL}/book?code=${primaryCode}`)}
               className="text-sm text-gold-600 hover:text-gold-700 font-medium"
             >
               Copy to Clipboard
@@ -69,7 +71,7 @@ const MarketingTab: React.FC = () => {
               "Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code {primaryCode} and save {primaryDiscount}!"
             </p>
             <button
-              onClick={() => copyToClipboard(`Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code ${primaryCode} and save ${primaryDiscount}! https://yutaka.izcy.tech/book?code=${primaryCode}`)}
+              onClick={() => copyToClipboard(`Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code ${primaryCode} and save ${primaryDiscount}! ${PUBLIC_URL}/book?code=${primaryCode}`)}
               className="text-sm text-gold-600 hover:text-gold-700 font-medium"
             >
               Copy to Clipboard
