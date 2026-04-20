@@ -36,7 +36,7 @@ async function apiRequest<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       throw new ApiError(
-        errorData?.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorData?.details?.message || errorData?.details?.error || errorData?.error || `HTTP ${response.status}: ${response.statusText}`,
         response.status,
         errorData
       );
@@ -49,10 +49,16 @@ async function apiRequest<T>(
   }
 }
 
-export async function login(username: string, password: string): Promise<TokenResponse> {
+export async function login(usernameOrEmail: string, password: string): Promise<TokenResponse> {
+  const body: Record<string, string> = { password };
+  if (usernameOrEmail.includes('@')) {
+    body.email = usernameOrEmail;
+  } else {
+    body.username = usernameOrEmail;
+  }
   return apiRequest<TokenResponse>('/bff/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(body),
   });
 }
 

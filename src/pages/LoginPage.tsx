@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
 
           <div className="mb-4">
             <label htmlFor="username" className="block text-sm font-medium text-primary-700 mb-1">
-              Username
+              Username or Email
             </label>
             <input
               id="username"
@@ -73,7 +73,7 @@ const LoginPage: React.FC = () => {
               required
               autoFocus
               className="w-full px-4 py-2.5 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent text-primary-900 placeholder-primary-400"
-              placeholder="Enter your username"
+              placeholder="Username or email"
             />
           </div>
 
