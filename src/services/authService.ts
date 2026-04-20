@@ -79,3 +79,10 @@ export async function logout(accessToken: string): Promise<void> {
     // Logout is best-effort — don't block on failure
   }
 }
+
+export async function verifyMagicLink(token: string): Promise<TokenResponse> {
+  return apiRequest<TokenResponse>('/bff/auth/magic/verify', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}

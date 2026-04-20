@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiError } from '../services/errors';
 
@@ -17,6 +17,13 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('error') === 'magic_link_failed') {
+      setError('Login link expired or invalid. Please try again.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +47,11 @@ const LoginPage: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-primary-50 px-4">
       <div className="w-full max-w-sm">
-        {/* Branding */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-serif text-primary-900 mb-1">Villa Sekipan</h1>
           <p className="text-primary-500 text-sm">Owner & Affiliate Dashboard</p>
         </div>
 
-        {/* Login Card */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-xl font-serif text-primary-900 mb-6 text-center">Sign In</h2>
 

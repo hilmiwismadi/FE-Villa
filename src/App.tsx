@@ -7,7 +7,9 @@ import MainLayout from './layouts/MainLayout';
 import OwnerLayout from './layouts/OwnerLayout';
 import AffiliateLayout from './pages/affiliate/AffiliateLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import BookingLoginGuard from './components/BookingLoginGuard';
 import LoginPage from './pages/LoginPage';
+import MagicLinkPage from './pages/MagicLinkPage';
 import HomePage from './pages/HomePage';
 import VillaPage from './pages/VillaPage';
 import BookingCalendarPage from './pages/BookingCalendarPage';
@@ -42,30 +44,35 @@ function App() {
             <Route path="/" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
               <Route index element={<HomePage />} />
               <Route path="villa" element={<VillaPage />} />
-              <Route path="book" element={<Navigate to="/book/calendar" replace />} />
-              <Route path="book/calendar" element={<BookingCalendarPage />} />
-              <Route path="book/form" element={<BookingFormPage />} />
-              <Route path="book/review" element={<BookingReviewPage />} />
-              <Route path="book/payment" element={<PaymentPage />} />
-              <Route path="book/payment/:orderId" element={<PaymentPage />} />
-              <Route path="book/confirmation/:orderId" element={<BookingSubmissionPage />} />
+              <Route path="book" element={<BookingLoginGuard />}>
+                <Route index element={<Navigate to="/book/calendar" replace />} />
+                <Route path="calendar" element={<BookingCalendarPage />} />
+                <Route path="form" element={<BookingFormPage />} />
+                <Route path="review" element={<BookingReviewPage />} />
+                <Route path="payment" element={<PaymentPage />} />
+                <Route path="payment/:orderId" element={<PaymentPage />} />
+                <Route path="confirmation/:orderId" element={<BookingSubmissionPage />} />
+              </Route>
             </Route>
 
             {/* English */}
             <Route path="/en" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
               <Route index element={<HomePage />} />
               <Route path="villa" element={<VillaPage />} />
-              <Route path="book" element={<Navigate to="/en/book/calendar" replace />} />
-              <Route path="book/calendar" element={<BookingCalendarPage />} />
-              <Route path="book/form" element={<BookingFormPage />} />
-              <Route path="book/review" element={<BookingReviewPage />} />
-              <Route path="book/payment" element={<PaymentPage />} />
-              <Route path="book/payment/:orderId" element={<PaymentPage />} />
-              <Route path="book/confirmation/:orderId" element={<BookingSubmissionPage />} />
+              <Route path="book" element={<BookingLoginGuard />}>
+                <Route index element={<Navigate to="/en/book/calendar" replace />} />
+                <Route path="calendar" element={<BookingCalendarPage />} />
+                <Route path="form" element={<BookingFormPage />} />
+                <Route path="review" element={<BookingReviewPage />} />
+                <Route path="payment" element={<PaymentPage />} />
+                <Route path="payment/:orderId" element={<PaymentPage />} />
+                <Route path="confirmation/:orderId" element={<BookingSubmissionPage />} />
+              </Route>
             </Route>
 
             {/* Login — public */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/magic" element={<MagicLinkPage />} />
 
             {/* Owner dashboard — PROTECTED */}
             <Route path="/owner" element={<ProtectedRoute />}>

@@ -5,10 +5,12 @@ import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
 import { normalizePhoneNumber, isValidPhoneNumber } from '../utils/phone';
+import { useAuth } from '../contexts/AuthContext';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, localePath, lang } = useTranslation();
+  const { user } = useAuth();
   const {
     selectedDates,
     formData,
@@ -22,6 +24,12 @@ const BookingFormPage: React.FC = () => {
     setPromoCode,
     dateRange,
   } = useBooking();
+
+  useEffect(() => {
+    if (user?.metadata?.phone && !formData.phone) {
+      setFormData({ ...formData, phone: String(user.metadata.phone) });
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState(appliedPromo ? `${appliedPromo.discountPercentage}% ${t.booking.calendar.discountApplied}` : '');

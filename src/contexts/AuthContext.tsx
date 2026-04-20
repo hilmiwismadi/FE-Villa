@@ -13,6 +13,7 @@ interface AuthContextType extends AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<UserInfo>;
+  loginWithToken: (accessToken: string, refreshToken: string) => Promise<UserInfo>;
   logout: () => void;
 }
 
@@ -92,6 +93,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return user;
   }, []);
 
+  const loginWithToken = useCallback(async (accessToken: string, refreshToken: string): Promise<UserInfo> => {
+    const user = await authService.getCurrentUser(accessToken);
+
+    const newState: AuthState = {
+      accessToken,
+      refreshToken,
+      user,
+    };
+
+    saveState(newState);
+    setState(newState);
+    return user;
+  }, []);
+
   const logout = useCallback(() => {
     if (state.accessToken) {
       authService.logout(state.accessToken);
@@ -107,6 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated: !!state.accessToken && !!state.user,
         isLoading,
         login,
+        loginWithToken,
         logout,
       }}
     >
