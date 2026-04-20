@@ -4,18 +4,6 @@ import { getAdminOrders, approveOrder, rejectOrder, ApiError } from '../../servi
 import { useToast } from '../../contexts/ToastContext';
 
 type PendingBooking = OrderResponse;
-const REJECTION_REASON_OPTIONS = [
-  'Transaksi tidak ditemukan atau tidak valid',
-  'Jumlah angka transaksi tidak tepat',
-];
-
-const normalizePhoneForWhatsApp = (phone: string) => {
-  const digits = phone.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('62')) return digits;
-  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
-  return `62${digits}`;
-};
 
 const PendingTab: React.FC = () => {
   const { toast } = useToast();
@@ -26,7 +14,6 @@ const PendingTab: React.FC = () => {
   const [confirmModal, setConfirmModal] = useState<{ orderId: string; booking: PendingBooking } | null>(null);
   const [rejectModal, setRejectModal] = useState<{ orderId: string; booking: PendingBooking } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [selectedRejectionOption, setSelectedRejectionOption] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'calendar'>('card');
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
@@ -75,21 +62,8 @@ const PendingTab: React.FC = () => {
 
     try {
       setProcessing(confirmModal.orderId);
-      const approvedBooking = confirmModal.booking;
       await approveOrder(confirmModal.orderId);
-      openWhatsApp(
-        approvedBooking.guestPhone,
-        `Halo ${approvedBooking.guestName},
-
-Transaksi Berhasil
-Order ID: ${approvedBooking.orderId}
-Check-in: ${formatDate(approvedBooking.checkInDate)}
-Check-out: ${formatDate(approvedBooking.checkOutDate)}
-Total: ${formatCurrency(approvedBooking.totalAmount)}
-
-Pembayaran Anda telah diverifikasi dan booking sudah disetujui. Terima kasih.`
-      );
-      // Remove from list after successful approval
+      setPendingBookings(prev => prev.filter(b => b.orderId !== confirmModal.orderId));
       setPendingBookings(prev => prev.filter(b => b.orderId !== confirmModal.orderId));
       setConfirmModal(null);
       toast('Order berhasil diterima', 'success');
@@ -108,7 +82,6 @@ Pembayaran Anda telah diverifikasi dan booking sudah disetujui. Terima kasih.`
     const booking = pendingBookings.find(b => b.orderId === orderId);
     if (!booking) return;
     setRejectModal({ orderId, booking });
-    setSelectedRejectionOption('');
   };
 
   const confirmReject = async () => {
@@ -116,26 +89,11 @@ Pembayaran Anda telah diverifikasi dan booking sudah disetujui. Terima kasih.`
 
     try {
       setProcessing(rejectModal.orderId);
-      const rejectedBooking = rejectModal.booking;
       await rejectOrder(rejectModal.orderId, rejectionReason.trim());
-      openWhatsApp(
-        rejectedBooking.guestPhone,
-        `Halo ${rejectedBooking.guestName},
-
-Transaksi Ditolak
-Order ID: ${rejectedBooking.orderId}
-Check-in: ${formatDate(rejectedBooking.checkInDate)}
-Check-out: ${formatDate(rejectedBooking.checkOutDate)}
-Total: ${formatCurrency(rejectedBooking.totalAmount)}
-Alasan: ${rejectionReason.trim()}
-
-Silakan hubungi admin untuk bantuan lebih lanjut.`
-      );
-      // Remove from list after successful rejection
+      setPendingBookings(prev => prev.filter(b => b.orderId !== rejectModal.orderId));
       setPendingBookings(prev => prev.filter(b => b.orderId !== rejectModal.orderId));
       setRejectModal(null);
       setRejectionReason('');
-      setSelectedRejectionOption('');
       toast('Order berhasil ditolak', 'success');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -174,12 +132,6 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
       hour: '2-digit',
       minute: '2-digit',
     }).format(new Date(dateStr));
-  };
-
-  const openWhatsApp = (phone: string, message: string) => {
-    const normalizedPhone = normalizePhoneForWhatsApp(phone);
-    if (!normalizedPhone) return;
-    window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   // Calendar view helpers
@@ -728,19 +680,6 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
               <label className="block text-sm font-medium text-primary-700 mb-2">
                 Rejection Reason *
               </label>
-              <select
-                value={selectedRejectionOption}
-                onChange={(e) => {
-                  setSelectedRejectionOption(e.target.value);
-                  if (e.target.value) setRejectionReason(e.target.value);
-                }}
-                className="w-full px-3 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 text-primary-900 mb-3"
-              >
-                <option value="">Pilih template alasan</option>
-                {REJECTION_REASON_OPTIONS.map((reason) => (
-                  <option key={reason} value={reason}>{reason}</option>
-                ))}
-              </select>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
@@ -755,7 +694,6 @@ Silakan hubungi admin untuk bantuan lebih lanjut.`
                 onClick={() => {
                   setRejectModal(null);
                   setRejectionReason('');
-                  setSelectedRejectionOption('');
                 }}
                 className="btn-secondary flex-1"
               >
