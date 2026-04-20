@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
-import { promoCodes } from './data';
+import { bffService, type AffiliateDashboardData } from '../../services/bffService';
 
 const MarketingTab: React.FC = () => {
   const { toast } = useToast();
+  const [codes, setCodes] = useState<AffiliateDashboardData['codes']>([]);
+
+  useEffect(() => {
+    bffService.getAffiliateDashboard()
+      .then((d) => setCodes(d.codes))
+      .catch(() => {});
+  }, []);
+
+  const primaryCode = codes[0]?.code || 'YOURCODE';
+  const primaryDiscount = codes[0]?.discountType === 'percentage' ? `${codes[0]?.discountValue}%` : '';
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -20,17 +30,20 @@ const MarketingTab: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-primary-700 mb-2">Website Link</label>
             <div className="flex gap-2">
-              <input type="text" value="https://villasekipan.com" readOnly className="input-field flex-1" />
-              <button onClick={() => copyToClipboard('https://villasekipan.com')} className="btn-secondary whitespace-nowrap">Copy</button>
+              <input type="text" value="https://yutaka.izcy.tech" readOnly className="input-field flex-1" />
+              <button onClick={() => copyToClipboard('https://yutaka.izcy.tech')} className="btn-secondary whitespace-nowrap">Copy</button>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-primary-700 mb-2">Booking Link with Your Code</label>
-            <div className="flex gap-2">
-              <input type="text" value={`https://villasekipan.com/book?code=${promoCodes[0].code}`} readOnly className="input-field flex-1" />
-              <button onClick={() => copyToClipboard(`https://villasekipan.com/book?code=${promoCodes[0].code}`)} className="btn-secondary whitespace-nowrap">Copy</button>
+          {codes.length === 0 && <p className="text-primary-500 text-sm">No promo codes assigned yet.</p>}
+          {codes.map((c) => (
+            <div key={c.code}>
+              <label className="block text-sm font-medium text-primary-700 mb-2">Booking Link — {c.code} ({c.discountType === 'percentage' ? `${c.discountValue}%` : ''} off)</label>
+              <div className="flex gap-2">
+                <input type="text" value={`https://yutaka.izcy.tech/book?code=${c.code}`} readOnly className="input-field flex-1" />
+                <button onClick={() => copyToClipboard(`https://yutaka.izcy.tech/book?code=${c.code}`)} className="btn-secondary whitespace-nowrap">Copy</button>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -40,10 +53,10 @@ const MarketingTab: React.FC = () => {
           <div className="p-4 border border-primary-200 rounded-lg">
             <p className="text-sm font-medium text-primary-700 mb-2">Social Media Post</p>
             <p className="text-primary-900 mb-3 italic">
-              "Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code {promoCodes[0].code} for {promoCodes[0].discount}% off your booking! Link in bio."
+              "Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code {primaryCode} for {primaryDiscount} off your booking! Link in bio."
             </p>
             <button
-              onClick={() => copyToClipboard(`Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code ${promoCodes[0].code} for ${promoCodes[0].discount}% off your booking! https://villasekipan.com/book?code=${promoCodes[0].code}`)}
+              onClick={() => copyToClipboard(`Experience authentic Japanese luxury at Villa Sekipan. This stunning villa combines traditional architecture with modern comfort. Use code ${primaryCode} for ${primaryDiscount} off your booking! https://yutaka.izcy.tech/book?code=${primaryCode}`)}
               className="text-sm text-gold-600 hover:text-gold-700 font-medium"
             >
               Copy to Clipboard
@@ -53,10 +66,10 @@ const MarketingTab: React.FC = () => {
           <div className="p-4 border border-primary-200 rounded-lg">
             <p className="text-sm font-medium text-primary-700 mb-2">Email Template</p>
             <p className="text-primary-900 mb-3 italic">
-              "Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code {promoCodes[0].code} and save {promoCodes[0].discount}%!"
+              "Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code {primaryCode} and save {primaryDiscount}!"
             </p>
             <button
-              onClick={() => copyToClipboard(`Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code ${promoCodes[0].code} and save ${promoCodes[0].discount}%! https://villasekipan.com/book?code=${promoCodes[0].code}`)}
+              onClick={() => copyToClipboard(`Looking for your next getaway? Villa Sekipan offers the perfect blend of tranquility and luxury. Set on a hillside with breathtaking views, this Japanese-inspired villa is the ultimate escape. Book now with code ${primaryCode} and save ${primaryDiscount}! https://yutaka.izcy.tech/book?code=${primaryCode}`)}
               className="text-sm text-gold-600 hover:text-gold-700 font-medium"
             >
               Copy to Clipboard

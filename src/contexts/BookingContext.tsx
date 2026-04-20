@@ -32,6 +32,7 @@ export const useBooking = () => {
 };
 
 const STORAGE_KEY = 'villa-sekipan-booking';
+const PROMO_KEY = 'villa-promo-code';
 
 const defaultFormData: GuestInfo = {
   fullName: '',
@@ -74,13 +75,22 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
   const [selectedDates, setSelectedDates] = useState<Date[]>(saved?.selectedDates ?? []);
   const [guestInfo, setGuestInfo] = useState<GuestInfo | null>(saved?.guestInfo ?? null);
   const [formData, setFormData] = useState<GuestInfo>(saved?.formData ?? defaultFormData);
-  const [promoCode, setPromoCode] = useState<string>(saved?.promoCode ?? '');
+  const [promoCode, setPromoCodeState] = useState<string>(saved?.promoCode || localStorage.getItem(PROMO_KEY) || '');
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(saved?.appliedPromo ?? null);
   const [pricing, setPricing] = useState(saved?.pricing ?? {
     originalPrice: 0,
     discountAmount: 0,
     finalPrice: 0,
   });
+
+  const setPromoCode = (code: string) => {
+    setPromoCodeState(code);
+    if (code) {
+      localStorage.setItem(PROMO_KEY, code);
+    } else {
+      localStorage.removeItem(PROMO_KEY);
+    }
+  };
 
   // Persist to sessionStorage on every change
   useEffect(() => {
@@ -97,6 +107,7 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     setAppliedPromo(null);
     setPricing({ originalPrice: 0, discountAmount: 0, finalPrice: 0 });
     sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROMO_KEY);
   };
 
   return (

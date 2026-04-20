@@ -109,6 +109,8 @@ export const bffService = {
 
   listAffiliates: () => bffRequest<Affiliate[]>('/bff/affiliate/list'),
 
+  getMyAffiliate: () => bffRequest<Affiliate>('/bff/affiliate/me'),
+
   getAffiliate: (id: string) => bffRequest<Affiliate>(`/bff/affiliate/${id}`),
 
   updateAffiliate: (id: string, data: Partial<Affiliate>) => bffRequest<Affiliate>(`/bff/affiliate/${id}`, {

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { affiliatorInfo } from './data';
+import { bffService, type Affiliate } from '../../services/bffService';
 
 const navItems = [
   { path: '/affiliate', label: 'Dashboard', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /> },
@@ -21,9 +21,16 @@ const pageTitles: Record<string, string> = {
 
 const AffiliateLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [affiliate, setAffiliate] = useState<Affiliate | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    bffService.getMyAffiliate()
+      .then(setAffiliate)
+      .catch(() => {});
+  }, []);
 
   const pageTitle = pageTitles[location.pathname] || 'Dashboard';
 
@@ -47,12 +54,12 @@ const AffiliateLayout: React.FC = () => {
         </div>
 
         <div className="p-6 border-b border-primary-800">
-          <p className="text-xs text-primary-400 mb-1">Affiliate ID</p>
-          <p className="text-sm font-medium">{affiliatorInfo.id}</p>
-          <p className="text-xs text-primary-400 mt-3 mb-1">Affiliate Name</p>
-          <p className="text-sm font-medium">{affiliatorInfo.name}</p>
-          <p className="text-xs text-primary-400 mt-3 mb-1">Commission Rate</p>
-          <p className="text-sm font-medium text-gold-400">{affiliatorInfo.commissionRate}%</p>
+          <p className="text-xs text-primary-400 mb-1">Affiliate</p>
+          <p className="text-sm font-medium">{affiliate?.name || user?.username || '—'}</p>
+          <p className="text-xs text-primary-400 mt-3 mb-1">Email</p>
+          <p className="text-sm font-medium">{user?.email || '—'}</p>
+          <p className="text-xs text-primary-400 mt-3 mb-1">Promo Codes</p>
+          <p className="text-sm font-medium text-gold-400">{affiliate?.codes?.length || 0} active</p>
         </div>
 
         <nav className="p-4">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
@@ -18,6 +18,7 @@ import { validatePromo } from '../services/promoService';
 
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t, localePath, dateFnsLocale } = useTranslation();
 
   console.log('[BookingCalendarPage] Component mounted!');
@@ -33,6 +34,13 @@ const BookingCalendarPage: React.FC = () => {
     pricing,
     setPricing,
   } = useBooking();
+
+  useEffect(() => {
+    const codeFromUrl = searchParams.get('code');
+    if (codeFromUrl && !promoCode) {
+      setPromoCode(codeFromUrl.toUpperCase());
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
