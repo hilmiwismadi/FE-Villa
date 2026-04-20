@@ -31,7 +31,7 @@ const MagicLinkPage: React.FC = () => {
         navigate(getRedirectPath(user.roles), { replace: true });
       })
       .catch(() => {
-        navigate('/login?error=magic_link_failed', { replace: true });
+        navigate('/?magic_link_error=expired', { replace: true });
       });
   }, [searchParams, loginWithToken, navigate]);
 

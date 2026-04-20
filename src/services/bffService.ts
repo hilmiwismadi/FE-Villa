@@ -26,7 +26,7 @@ async function bffRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      const message = errorData?.details?.message || errorData?.error || `HTTP ${response.status}`;
+      const message = errorData?.details?.message || errorData?.details?.error || errorData?.error || `HTTP ${response.status}`;
       throw new ApiError(message, response.status, errorData);
     }
     return response.json();
