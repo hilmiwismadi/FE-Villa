@@ -25,15 +25,18 @@ const MagicLinkPage: React.FC = () => {
       return;
     }
 
+    console.log('[MAGIC-LINK] Verifying token:', token.substring(0, 16) + '...');
     authService.verifyMagicLink(token)
       .then(async (tokens) => {
+        console.log('[MAGIC-LINK] Token verified, logging in...');
         const user = await loginWithToken(tokens.access_token, tokens.refresh_token);
         navigate(getRedirectPath(user.roles), { replace: true });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[MAGIC-LINK] Verification failed:', err.message);
         navigate('/?magic_link_error=expired', { replace: true });
       });
-  }, [searchParams, loginWithToken, navigate]);
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-primary-50">
