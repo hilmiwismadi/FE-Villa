@@ -65,6 +65,24 @@ export interface AffiliateDashboardData {
     revenue: number;
   };
   bookings: Array<any>;
+  disbursement: {
+    totalDisbursed: number;
+    pendingPayouts: number;
+    availableForPayout: number;
+    recentDisbursements: Array<Disbursement>;
+  };
+}
+
+export interface Disbursement {
+  id: string;
+  affiliate_id: string;
+  affiliate_code: string;
+  quota: number;
+  status: "pending" | "processed" | "rejected";
+  processed_at?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface OwnerDashboardData {
@@ -160,6 +178,32 @@ export const bffService = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+
+  getDisbursementBalance: () => bffRequest<{
+    affiliateId: string;
+    totalUsage: number;
+    unclaimedQuota: number;
+    pendingPayouts: number;
+    totalDisbursed: number;
+    availableForPayout: number;
+    disbursements: Disbursement[];
+  }>('/bff/disbursement/balance'),
+
+  requestPayout: (amount: number, note?: string) => bffRequest<Disbursement>('/bff/disbursement/request', {
+    method: 'POST',
+    body: JSON.stringify({ amount, note }),
+  }),
+
+  listDisbursements: (status?: string) => {
+    const url = status ? `/bff/disbursement/list?status=${status}` : '/bff/disbursement/list';
+    return bffRequest<Disbursement[]>(url);
+  },
+
+  updateDisbursementStatus: (id: string, status: 'processed' | 'rejected', metadata?: Record<string, unknown>) =>
+    bffRequest<Disbursement>(`/bff/disbursement/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, metadata }),
+    }),
 };
 
 

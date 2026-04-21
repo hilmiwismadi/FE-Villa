@@ -27,6 +27,7 @@ import PricingTab from './pages/owner/PricingTab';
 import UsersTab from './pages/owner/UsersTab';
 import PromosTab from './pages/owner/PromosTab';
 import AffiliatesTab from './pages/owner/AffiliatesTab';
+import DisbursementsTab from './pages/owner/DisbursementsTab';
 import AffiliateDashboard from './pages/affiliate/DashboardTab';
 import CodesTab from './pages/affiliate/CodesTab';
 import BookingsTab from './pages/affiliate/BookingsTab';
@@ -88,6 +89,7 @@ function App() {
                 <Route path="pricing" element={<PricingTab />} />
                 <Route path="users" element={<UsersTab />} />
                 <Route path="affiliates" element={<AffiliatesTab />} />
+                <Route path="disbursements" element={<DisbursementsTab />} />
                 <Route path="promos">
                   <Route index element={<Navigate to="overview" replace />} />
                   <Route path=":section" element={<PromosTab />} />
