@@ -248,13 +248,6 @@ const BookingFormPage: React.FC = () => {
     }
   }, [derivedCheckIn, derivedCheckOut, formData.phone, promoCode, t, setAppliedPromo]);
 
-  // Auto-validate promo when phone is entered and dates are selected
-  useEffect(() => {
-    if (derivedCheckIn && derivedCheckOut && formData.phone && promoCode && !appliedPromo && !validatingPromo) {
-      handleApplyPromo();
-    }
-  }, [derivedCheckIn?.getTime(), derivedCheckOut?.getTime(), formData.phone, promoCode, handleApplyPromo, appliedPromo, validatingPromo]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleRemovePromo = () => {
     setPromoCode('');
     setAppliedPromo(null);

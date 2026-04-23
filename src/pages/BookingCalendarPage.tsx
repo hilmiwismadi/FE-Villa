@@ -321,22 +321,6 @@ const BookingCalendarPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!derivedCheckIn || !derivedCheckOut) return;
-    if (!promoCode.trim()) {
-      setPromoError('');
-      setPromoSuccess('');
-      setAppliedPromo(null);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      handleApplyPromo(promoCode);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [promoCode, derivedCheckIn, derivedCheckOut]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleRemovePromo = () => {
     setPromoCode('');
     setAppliedPromo(null);

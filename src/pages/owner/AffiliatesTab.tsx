@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
 import { useToast } from '../../contexts/ToastContext';
+import { getPromo as fetchPromo } from '../../services/promoService';
+
+const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const AffiliatesTab: React.FC = () => {
   const { toast } = useToast();
@@ -8,6 +11,8 @@ const AffiliatesTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showAddCode, setShowAddCode] = useState<string | null>(null);
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [codeDetails, setCodeDetails] = useState<Record<string, any>>({});
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [codeForm, setCodeForm] = useState({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 });
@@ -74,6 +79,22 @@ const AffiliatesTab: React.FC = () => {
     }
   };
 
+  const toggleCodeDetails = async (code: string) => {
+    if (expandedCode === code) {
+      setExpandedCode(null);
+      return;
+    }
+    setExpandedCode(code);
+    if (!codeDetails[code]) {
+      try {
+        const promo = await fetchPromo(code);
+        setCodeDetails(prev => ({ ...prev, [code]: promo }));
+      } catch {
+        setCodeDetails(prev => ({ ...prev, [code]: null }));
+      }
+    }
+  };
+
   if (loading) return <div className="text-center py-12 text-primary-600">Loading affiliates...</div>;
 
   return (
@@ -130,13 +151,61 @@ const AffiliatesTab: React.FC = () => {
               {a.codes && a.codes.length > 0 ? (
                 <div className="border-t border-primary-100 pt-3">
                   <p className="text-sm font-medium text-primary-700 mb-2">Promo Codes ({a.codes.length})</p>
-                  <div className="flex flex-wrap gap-2">
-                    {a.codes.map((code: string) => (
-                      <span key={code} className="inline-flex items-center gap-2 px-3 py-1.5 bg-gold-100 text-gold-800 text-sm rounded-full">
-                        {code}
-                        <button className="text-red-500 hover:text-red-700 text-xs font-bold" onClick={() => handleRemoveCode(a.id, code)}>&times;</button>
-                      </span>
-                    ))}
+                  <div className="space-y-2">
+                    {a.codes.map((code: string) => {
+                      const detail = codeDetails[code];
+                      const isExpanded = expandedCode === code;
+                      return (
+                        <div key={code}>
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold-100 text-gold-800 text-sm rounded-full hover:bg-gold-200 transition-colors cursor-pointer"
+                              onClick={() => toggleCodeDetails(code)}
+                            >
+                              {code}
+                              <svg className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            <button className="text-red-500 hover:text-red-700 text-xs font-bold" onClick={() => handleRemoveCode(a.id, code)}>&times;</button>
+                          </div>
+                          {isExpanded && (
+                            <div className="mt-2 ml-1 p-3 bg-primary-50 rounded-lg text-sm">
+                              {detail === undefined ? (
+                                <p className="text-primary-400">Loading...</p>
+                              ) : detail === null ? (
+                                <p className="text-red-500">Promo not found in PromoService</p>
+                              ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <div>
+                                    <p className="text-xs text-primary-500">Discount</p>
+                                    <p className="font-medium text-primary-900">{detail.discountType === 'percentage' ? `${detail.discountValue}%` : fmt(detail.discountValue)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-primary-500">Commission</p>
+                                    <p className="font-medium text-primary-900">{fmt(detail.commissionAmount || 0)}<span className="text-xs text-primary-500"> /booking</span></p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-primary-500">Usage</p>
+                                    <p className="font-medium text-primary-900">{detail.usageCount || 0}{detail.maxUsage ? ` / ${detail.maxUsage}` : ''}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-primary-500">Status</p>
+                                    <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${detail.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                      {detail.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
+                                  {detail.expiryType === 'date' && detail.expiryDate && (
+                                    <div>
+                                      <p className="text-xs text-primary-500">Expires</p>
+                                      <p className="font-medium text-primary-900">{new Date(detail.expiryDate).toLocaleDateString()}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-primary-500 mt-2">Total usage: {a.usage_count || 0}</p>
                 </div>

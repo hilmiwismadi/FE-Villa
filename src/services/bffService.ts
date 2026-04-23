@@ -62,6 +62,7 @@ export interface AffiliateDashboardData {
     totalBookings: number;
     confirmedCommission: number;
     pendingCommission: number;
+    totalCommission: number;
     revenue: number;
   };
   bookings: Array<any>;
