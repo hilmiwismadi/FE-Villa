@@ -1,6 +1,6 @@
 import { ApiError } from './errors';
 
-const BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
+const BASE_URL = import.meta.env.VITE_BFF_URL || '';
 
 export interface TokenResponse {
   access_token: string;
