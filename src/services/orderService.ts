@@ -7,6 +7,9 @@ const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_PROXY === 
 const BASE_URL = USE_DEV_PROXY
   ? ''
   : import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
+const BFF_BASE_URL = USE_DEV_PROXY
+  ? ''
+  : import.meta.env.VITE_BFF_URL || BASE_URL;
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';
@@ -33,7 +36,9 @@ export interface OrderResponse {
   extraBeds: number;
   estimatedCheckIn: string;
   checkInDate: string;
+  checkInHour: string;
   checkOutDate: string;
+  checkOutHour: string;
   nightCount: number;
   nightlyBreakdown: Array<{
     date: string;
@@ -43,6 +48,10 @@ export interface OrderResponse {
   subtotal: number;
   promoCode: string | null;
   discountAmount: number;
+  promos: Array<{
+    promoCode: string;
+    discountAmount: number;
+  }>;
   uniqueCode: number;
   totalAmount: number;
   paymentDeadline: string | null;
@@ -65,6 +74,7 @@ export interface CreateOrderRequest {
   checkOutDate: string;
   checkOutHour?: string;
   promoCode?: string;
+  promoCodes?: string[];
 }
 
 export interface PaymentStatusResponse {
@@ -83,18 +93,28 @@ export interface ConfirmPaymentResponse {
 }
 
 export interface DashboardResponse {
+  currentWeekRevenue: number;
+  currentWeekBookings: number;
+  currentWeekNights: number;
   currentMonthRevenue: number;
+  currentMonthBookings: number;
+  currentMonthNights: number;
   yearToDateRevenue: number;
-  occupancyRate: number;
+  yearToDateBookings: number;
+  yearToDateNights: number;
+  weeklyOccupancyRate: number;
+  monthlyOccupancyRate: number;
+  averageNightlyRate: number;
   pendingOrders: number;
   activeBookings: number;
   totalGuests: number;
 }
 
 export interface RevenueResponse {
-  period: 'monthly' | 'yearly';
+  period: 'weekly' | 'monthly' | 'yearly';
   year: number;
-  month?: number;
+  month?: number | null;
+  week?: number | null;
   totalRevenue: number;
   totalBookings: number;
   totalNights: number;
@@ -102,6 +122,62 @@ export interface RevenueResponse {
     label: string;
     revenue: number;
     bookings: number;
+  }>;
+}
+
+export interface StatsResponse {
+  period: {
+    year: number | null;
+    month: number | null;
+  };
+  cancellationRate: {
+    totalOrders: number;
+    expired: number;
+    rejected: number;
+    completed: number;
+    active: number;
+    expiryRate: number;
+    rejectionRate: number;
+    conversionRate: number;
+  };
+  promoImpact: {
+    ordersWithPromo: number;
+    totalDiscountGiven: number;
+    averageDiscountPerOrder: number;
+    topPromos: Array<{
+      code: string;
+      usageCount: number;
+      totalDiscount: number;
+    }>;
+  };
+  leadTime: {
+    averageDays: number;
+    medianDays: number;
+    buckets: Array<{
+      label: string;
+      count: number;
+    }>;
+  };
+  repeatGuests: {
+    totalUniqueGuests: number;
+    repeatGuests: number;
+    repeatRate: number;
+    averageBookingsPerGuest: number;
+    topGuests: Array<{
+      phone: string;
+      name: string;
+      bookingCount: number;
+    }>;
+  };
+  sourceBreakdown: {
+    regular: { orders: number; revenue: number };
+    manual: { orders: number; revenue: number };
+    affiliate: { orders: number; revenue: number };
+    direct: { orders: number; revenue: number };
+  };
+  statusDistribution: Array<{
+    status: string;
+    count: number;
   }>;
 }
 
@@ -156,9 +232,10 @@ export { ApiError } from './errors';
 // Helper function for API calls
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  baseUrl = BASE_URL
 ): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
+  const url = `${baseUrl}${endpoint}`;
 
   try {
     const response = await fetch(url, {
@@ -368,15 +445,32 @@ export async function getDashboard(): Promise<DashboardResponse> {
  * Get revenue report (monthly or yearly)
  */
 export async function getRevenue(
-  period: 'monthly' | 'yearly',
+  period: 'weekly' | 'monthly' | 'yearly',
   year: number,
-  month?: number
+  month?: number,
+  week?: number
 ): Promise<RevenueResponse> {
-  let url = `/order/admin/revenue?period=${period}&year=${year}`;
+  let url = `/bff/order/admin/revenue?period=${period}&year=${year}`;
   if (month) url += `&month=${month}`;
+  if (week) url += `&week=${week}`;
   return apiRequest(url, {
     headers: getAuthHeaders(),
-  });
+  }, BFF_BASE_URL);
+}
+
+/**
+ * Get order analytics statistics
+ */
+export async function getStats(
+  year?: number,
+  month?: number
+): Promise<StatsResponse> {
+  let url = '/bff/order/admin/stats?';
+  if (year) url += `year=${year}&`;
+  if (month) url += `month=${month}&`;
+  return apiRequest(url, {
+    headers: getAuthHeaders(),
+  }, BFF_BASE_URL);
 }
 
 /**

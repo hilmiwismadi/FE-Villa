@@ -29,14 +29,14 @@ export interface ValidatePromoResponse {
 
 export interface PromoResponse {
   code: string;
-  type: 'affiliate' | 'automatic';
+  type: 'affiliate' | 'automatic' | 'general';
   isActive: boolean;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   dayCondition: 'all' | 'weekday' | 'weekend' | 'custom';
   customDays: number[] | null;
-  affiliatorId?: string;
-  commissionAmount?: number;
+  affiliatorId?: string | null;
+  commissionAmount: number;
   triggerType?: 'booking_count' | 'total_nights' | null;
   triggerThreshold?: number | null;
   expiryType: 'date' | 'duration_days' | 'none';
@@ -44,8 +44,18 @@ export interface PromoResponse {
   expiryDurationDays?: number | null;
   usageCount: number;
   maxUsage: number | null;
+  label: string;
+  rules: PromoRule[] | null;
+  stackable: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PromoRule {
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  dayCondition: 'all' | 'weekday' | 'weekend' | 'custom';
+  customDays?: number[] | null;
 }
 
 export interface ApplyPromoRequest {
@@ -69,6 +79,33 @@ export interface ApplyPromoResponse {
   commissionAmount: number;
   affiliatorId?: string;
   promoId: string;
+}
+
+export interface ApplyBatchRequest {
+  promoCodes: string[];
+  orderId: string;
+  guestPhone: string;
+  guestName: string;
+  checkInDate: string;
+  checkOutDate: string;
+  nightlyBreakdown: Array<{
+    date: string;
+    basePrice: number;
+  }>;
+  userId?: string;
+  guestBookingCount?: number;
+  guestTotalNights?: number;
+}
+
+export interface ApplyBatchResponse {
+  totalDiscount: number;
+  promos: Array<{
+    promoCode: string;
+    promoId: string;
+    discountAmount: number;
+    commissionAmount: number;
+    affiliatorId: string | null;
+  }>;
 }
 
 export interface PromoUsage {
@@ -147,6 +184,13 @@ export async function applyPromo(data: ApplyPromoRequest): Promise<ApplyPromoRes
   });
 }
 
+export async function applyPromoBatch(data: ApplyBatchRequest): Promise<ApplyBatchResponse> {
+  return apiRequest<ApplyBatchResponse>('/bff/promo/apply-batch', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 // ========== ADMIN ENDPOINTS ==========
 
 /**
@@ -168,7 +212,7 @@ function getAuthHeaders(): HeadersInit {
  */
 export async function createPromo(data: {
   code: string;
-  type: 'affiliate' | 'automatic';
+  type: 'affiliate' | 'automatic' | 'general';
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   dayCondition: 'all' | 'weekday' | 'weekend' | 'custom';
@@ -181,6 +225,9 @@ export async function createPromo(data: {
   expiryDate?: string;
   expiryDurationDays?: number;
   maxUsage?: number;
+  label?: string;
+  rules?: PromoRule[];
+  stackable?: boolean;
 }): Promise<PromoResponse> {
   return apiRequest<PromoResponse>('/promo/admin/create', {
     method: 'POST',
@@ -193,7 +240,7 @@ export async function createPromo(data: {
  * List all promo codes with optional filters
  */
 export async function listPromos(
-  type?: 'affiliate' | 'automatic',
+  type?: 'affiliate' | 'automatic' | 'general',
   isActive?: boolean,
   page = 1,
   limit = 20

@@ -37,6 +37,17 @@ export interface PromoCode {
   discountValue?: number;
   dayCondition?: 'all' | 'weekday' | 'weekend' | 'custom';
   customDays?: number[] | null;
+  type?: 'affiliate' | 'automatic' | 'general';
+  label?: string;
+  rules?: PromoRule[] | null;
+  stackable?: boolean;
+}
+
+export interface PromoRule {
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  dayCondition: 'all' | 'weekday' | 'weekend' | 'custom';
+  customDays?: number[] | null;
 }
 
 export interface GuestInfo {

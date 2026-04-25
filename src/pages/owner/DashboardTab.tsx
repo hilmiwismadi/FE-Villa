@@ -103,6 +103,10 @@ const DashboardTab: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         <div className="bg-white rounded-lg p-6 shadow-sm">
+          <p className="text-sm text-primary-600 mb-2">Current Week Revenue</p>
+          <p className="text-3xl font-serif text-primary-900">{formatCurrency(dashboard.currentWeekRevenue)}</p>
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-sm">
           <p className="text-sm text-primary-600 mb-2">Current Month Revenue</p>
           <p className="text-3xl font-serif text-primary-900">{formatCurrency(dashboard.currentMonthRevenue)}</p>
         </div>
@@ -111,8 +115,16 @@ const DashboardTab: React.FC = () => {
           <p className="text-3xl font-serif text-primary-900">{formatCurrency(dashboard.yearToDateRevenue)}</p>
         </div>
         <div className="bg-white rounded-lg p-6 shadow-sm">
-          <p className="text-sm text-primary-600 mb-2">Occupancy Rate</p>
-          <p className="text-3xl font-serif text-primary-900">{dashboard.occupancyRate}%</p>
+          <p className="text-sm text-primary-600 mb-2">Weekly Occupancy</p>
+          <p className="text-3xl font-serif text-primary-900">{dashboard.weeklyOccupancyRate}%</p>
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <p className="text-sm text-primary-600 mb-2">Monthly Occupancy</p>
+          <p className="text-3xl font-serif text-primary-900">{dashboard.monthlyOccupancyRate}%</p>
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <p className="text-sm text-primary-600 mb-2">Avg Nightly Rate</p>
+          <p className="text-3xl font-serif text-primary-900">{formatCurrency(dashboard.averageNightlyRate)}</p>
         </div>
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <p className="text-sm text-primary-600 mb-2">Pending Orders</p>
