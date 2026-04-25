@@ -137,7 +137,7 @@ const BookingReviewPage: React.FC = () => {
           checkInHour: checkInHour,
           checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
           checkOutHour: '12:00',
-          promoCode: appliedPromo?.code || undefined,
+          promoCodes: appliedPromo?.code ? [appliedPromo.code] : undefined,
         };
 
         console.log('========================================');

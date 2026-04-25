@@ -24,6 +24,11 @@ const PaymentPage: React.FC = () => {
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const promoBreakdown = orderResponse?.promos?.length
+    ? orderResponse.promos
+    : (orderResponse?.promoCode
+      ? [{ promoCode: orderResponse.promoCode, discountAmount: orderResponse.discountAmount }]
+      : []);
 
   // Check if booking data is valid
   const hasValidBooking = Boolean(dateRange.checkIn && dateRange.checkOut);
@@ -232,12 +237,19 @@ const PaymentPage: React.FC = () => {
               <p><strong>Order ID:</strong> {orderResponse.orderId}</p>
               <p><strong>Status:</strong> {orderResponse.status}</p>
               <p><strong>Guest Name:</strong> {orderResponse.guestName}</p>
-              <p><strong>Check-in:</strong> {new Date(orderResponse.checkInDate).toLocaleDateString()}</p>
-              <p><strong>Check-out:</strong> {new Date(orderResponse.checkOutDate).toLocaleDateString()}</p>
+              <p><strong>Check-in:</strong> {new Date(orderResponse.checkInDate).toLocaleDateString()} ({orderResponse.checkInHour})</p>
+              <p><strong>Check-out:</strong> {new Date(orderResponse.checkOutDate).toLocaleDateString()} ({orderResponse.checkOutHour})</p>
               <p><strong>Number of Nights:</strong> {orderResponse.nightCount}</p>
               <p><strong>Subtotal:</strong> IDR {orderResponse.subtotal.toLocaleString()}</p>
               {orderResponse.discountAmount > 0 && (
-                <p className="text-green-600"><strong>Discount:</strong> IDR {orderResponse.discountAmount.toLocaleString()}</p>
+                <div className="text-green-600">
+                  <p><strong>Discount:</strong> IDR {orderResponse.discountAmount.toLocaleString()}</p>
+                  {promoBreakdown.map((promo) => (
+                    <p key={`${promo.promoCode}-${promo.discountAmount}`} className="text-xs text-green-700">
+                      Promo {promo.promoCode}: - IDR {promo.discountAmount.toLocaleString()}
+                    </p>
+                  ))}
+                </div>
               )}
               <p><strong>Total Amount:</strong> IDR {orderResponse.totalAmount.toLocaleString()}</p>
               {orderResponse.uniqueCode > 0 && (
@@ -246,8 +258,8 @@ const PaymentPage: React.FC = () => {
               {orderResponse.paymentDeadline && (
                 <p><strong>Payment Deadline:</strong> {new Date(orderResponse.paymentDeadline).toLocaleString()}</p>
               )}
-              {orderResponse.promoCode && (
-                <p><strong>Promo Code:</strong> {orderResponse.promoCode}</p>
+              {promoBreakdown.length > 0 && (
+                <p><strong>Promo Code(s):</strong> {promoBreakdown.map((promo) => promo.promoCode).join(', ')}</p>
               )}
             </div>
           </div>

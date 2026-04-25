@@ -320,6 +320,9 @@ const PendingTab: React.FC = () => {
                       <p className="text-primary-900 font-medium">
                         {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
                       </p>
+                      <p className="text-xs text-primary-600">
+                        {booking.checkInHour} - {booking.checkOutHour}
+                      </p>
                       <p className="text-sm text-primary-600">{booking.nightCount} nights</p>
                     </div>
                   </div>
@@ -330,10 +333,21 @@ const PendingTab: React.FC = () => {
                       <span className="text-primary-900">{formatCurrency(booking.subtotal)}</span>
                     </div>
                     {booking.discountAmount > 0 && (
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-primary-600">Discount{booking.promoCode && ` (${booking.promoCode})`}</span>
-                        <span className="text-green-600">-{formatCurrency(booking.discountAmount)}</span>
-                      </div>
+                      <>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-primary-600">Discount</span>
+                          <span className="text-green-600">-{formatCurrency(booking.discountAmount)}</span>
+                        </div>
+                        {(booking.promos?.length
+                          ? booking.promos
+                          : (booking.promoCode ? [{ promoCode: booking.promoCode, discountAmount: booking.discountAmount }] : [])
+                        ).map((promo) => (
+                          <div key={`${promo.promoCode}-${promo.discountAmount}`} className="flex justify-between text-xs mb-1">
+                            <span className="text-green-700">Promo {promo.promoCode}</span>
+                            <span className="text-green-700">-{formatCurrency(promo.discountAmount)}</span>
+                          </div>
+                        ))}
+                      </>
                     )}
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-primary-600">Unique Code</span>

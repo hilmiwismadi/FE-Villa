@@ -230,11 +230,19 @@ const PreviousTab: React.FC = () => {
               <p><strong>Guest Count:</strong> {selectedOrder.guestCount}</p>
               <p><strong>Extra Beds:</strong> {selectedOrder.extraBeds}</p>
               <p><strong>Check-in Date:</strong> {formatDate(selectedOrder.checkInDate)}</p>
+              <p><strong>Check-in Hour:</strong> {selectedOrder.checkInHour}</p>
               <p><strong>Check-out Date:</strong> {formatDate(selectedOrder.checkOutDate)}</p>
+              <p><strong>Check-out Hour:</strong> {selectedOrder.checkOutHour}</p>
               <p><strong>Nights:</strong> {selectedOrder.nightCount}</p>
               <p><strong>Estimated Check-in:</strong> {selectedOrder.estimatedCheckIn}</p>
               <p><strong>Subtotal:</strong> {formatCurrency(selectedOrder.subtotal)}</p>
               <p><strong>Discount:</strong> {formatCurrency(selectedOrder.discountAmount)}</p>
+              {(selectedOrder.promos?.length
+                ? selectedOrder.promos
+                : (selectedOrder.promoCode ? [{ promoCode: selectedOrder.promoCode, discountAmount: selectedOrder.discountAmount }] : [])
+              ).map((promo) => (
+                <p key={`${promo.promoCode}-${promo.discountAmount}`}><strong>Promo {promo.promoCode}:</strong> -{formatCurrency(promo.discountAmount)}</p>
+              ))}
               <p><strong>Unique Code:</strong> {selectedOrder.uniqueCode}</p>
               <p><strong>Total:</strong> {formatCurrency(selectedOrder.totalAmount)}</p>
               <p><strong>Transaction Timestamp:</strong> {formatTimestamp(selectedOrder.createdAt)}</p>

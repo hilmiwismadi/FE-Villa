@@ -124,6 +124,15 @@ const Calendar: React.FC<CalendarProps> = ({
     return dayData.label || dayData.customPriceLabel || dayData.pricingLabel || null;
   };
 
+  const getPriceSourceLabel = (dayData?: CalendarDay): string | null => {
+    if (!dayData?.priceSource) return null;
+    if (dayData.priceSource === 'custom_onetime') return 'One-time custom pricing';
+    if (dayData.priceSource === 'custom_weekly') return 'Weekly custom pricing';
+    if (dayData.priceSource === 'default') return 'Default pricing';
+    if (dayData.priceSource === 'none') return 'No price configured';
+    return null;
+  };
+
   const defaultMonthPrice = useMemo(() => {
     if (!calendarData || calendarData.length === 0) return null;
 
@@ -279,7 +288,9 @@ const Calendar: React.FC<CalendarProps> = ({
             typeof defaultMonthPrice === 'number' &&
             price !== defaultMonthPrice;
           const hasCustomPricing = Boolean(customPricingLabel) && (dayData?.source === 'custom' || hasCustomPricingByPrice);
-          const customPricingTooltip = customPricingLabel;
+          const customPricingTooltip = blocked
+            ? (dayData?.blockReason || customPricingLabel)
+            : (customPricingLabel || getPriceSourceLabel(dayData));
 
           if (readOnly) {
             return (

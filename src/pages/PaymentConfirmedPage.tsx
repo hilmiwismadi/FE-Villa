@@ -154,6 +154,12 @@ Saya telah memesan pada tanggal ${checkIn} - ${checkOut} dengan nomer ${orderDat
     return null;
   }
 
+  const promoBreakdown = orderData.promos?.length
+    ? orderData.promos
+    : (orderData.promoCode
+      ? [{ promoCode: orderData.promoCode, discountAmount: orderData.discountAmount }]
+      : []);
+
   return (
     <div className="section-padding bg-primary-50">
       <div className="container-custom max-w-4xl">
@@ -195,13 +201,13 @@ Saya telah memesan pada tanggal ${checkIn} - ${checkOut} dengan nomer ${orderDat
             <div className="flex justify-between">
               <span className="text-primary-600">Check-in:</span>
               <span className="font-medium text-primary-900">
-                {format(new Date(orderData.checkInDate), 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+                {format(new Date(orderData.checkInDate), 'EEEE, d MMMM yyyy', { locale: dateLocale })} ({orderData.checkInHour})
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-primary-600">Check-out:</span>
               <span className="font-medium text-primary-900">
-                {format(new Date(orderData.checkOutDate), 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+                {format(new Date(orderData.checkOutDate), 'EEEE, d MMMM yyyy', { locale: dateLocale })} ({orderData.checkOutHour})
               </span>
             </div>
             <div className="flex justify-between">
@@ -214,10 +220,18 @@ Saya telah memesan pada tanggal ${checkIn} - ${checkOut} dengan nomer ${orderDat
                 <span className="font-medium text-primary-900">IDR {orderData.subtotal.toLocaleString('id-ID')}</span>
               </div>
               {orderData.discountAmount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-green-600">Diskon:</span>
-                  <span className="font-medium text-green-900">IDR {orderData.discountAmount.toLocaleString('id-ID')}</span>
-                </div>
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-green-600">Diskon:</span>
+                    <span className="font-medium text-green-900">IDR {orderData.discountAmount.toLocaleString('id-ID')}</span>
+                  </div>
+                  {promoBreakdown.map((promo) => (
+                    <div key={`${promo.promoCode}-${promo.discountAmount}`} className="flex justify-between text-xs">
+                      <span className="text-green-700">Promo {promo.promoCode}</span>
+                      <span className="text-green-700">- IDR {promo.discountAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  ))}
+                </>
               )}
               <div className="flex justify-between">
                 <span className="text-primary-600">Total:</span>
