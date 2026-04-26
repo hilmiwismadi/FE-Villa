@@ -11,7 +11,9 @@ import BookingLoginGuard from './components/BookingLoginGuard';
 import LoginPage from './pages/LoginPage';
 import MagicLinkPage from './pages/MagicLinkPage';
 import HomePage from './pages/HomePage';
+import DemoPage from './pages/DemoPage';
 import VillaPage from './pages/VillaPage';
+import RulesPage from './pages/RulesPage';
 import BookingCalendarPage from './pages/BookingCalendarPage';
 import BookingFormPage from './pages/BookingFormPage';
 import BookingReviewPage from './pages/BookingReviewPage';
@@ -45,6 +47,7 @@ function App() {
             <Route path="/" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
               <Route index element={<HomePage />} />
               <Route path="villa" element={<VillaPage />} />
+              <Route path="rules" element={<RulesPage />} />
               <Route path="book" element={<BookingLoginGuard />}>
                 <Route index element={<Navigate to="/book/calendar" replace />} />
                 <Route path="calendar" element={<BookingCalendarPage />} />
@@ -60,6 +63,7 @@ function App() {
             <Route path="/en" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
               <Route index element={<HomePage />} />
               <Route path="villa" element={<VillaPage />} />
+              <Route path="rules" element={<RulesPage />} />
               <Route path="book" element={<BookingLoginGuard />}>
                 <Route index element={<Navigate to="/en/book/calendar" replace />} />
                 <Route path="calendar" element={<BookingCalendarPage />} />
@@ -74,6 +78,9 @@ function App() {
             {/* Login — public */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/magic" element={<MagicLinkPage />} />
+            <Route path="/demo" element={<LanguageProvider><MainLayout /></LanguageProvider>}>
+              <Route index element={<DemoPage />} />
+            </Route>
 
             {/* Owner dashboard — PROTECTED */}
             <Route path="/owner" element={<ProtectedRoute />}>

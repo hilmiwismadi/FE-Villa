@@ -4,8 +4,8 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { getOrder, ApiError } from '../services/orderService';
-import type { OrderResponse } from '../services/orderService';
+import { getOrder, ApiError } from '../services/orderServiceDirectBE';
+import type { OrderResponse } from '../services/orderServiceDirectBE';
 
 const PaymentConfirmedPage: React.FC = () => {
   const navigate = useNavigate();

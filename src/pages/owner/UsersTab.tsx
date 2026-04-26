@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AdminGuestDetailResponse, AdminGuestListItem } from '../../services/orderService';
-import { getAdminGuestDetail, getAdminGuests } from '../../services/orderService';
+import type { AdminGuestDetailResponse, AdminGuestListItem } from '../../services/orderServiceDirectBE';
+import { getAdminGuestDetail, getAdminGuests } from '../../services/orderServiceDirectBE';
 
 const PAGE_SIZE = 20;
 

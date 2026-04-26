@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import * as authService from '../services/authService';
+import * as authService from '../services/authServiceDirectBE';
 
 function getRedirectPath(roles: string[]): string {
   if (roles.includes('admin')) return '/owner';

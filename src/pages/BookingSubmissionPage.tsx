@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { getOrder } from '../services/orderService';
-import type { OrderResponse } from '../services/orderService';
+import { getOrder } from '../services/orderServiceDirectBE';
+import type { OrderResponse } from '../services/orderServiceDirectBE';
 import { format } from 'date-fns';
 
 const BookingSubmissionPage: React.FC = () => {

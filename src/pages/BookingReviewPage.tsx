@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { differenceInDays, format } from 'date-fns';
-import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
-import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderService';
+import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
+import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderServiceDirectBE';
 import { normalizePhoneNumber } from '../utils/phone';
 
 const orderCreateInFlight = new Map<string, Promise<OrderResponse>>();
@@ -137,7 +137,7 @@ const BookingReviewPage: React.FC = () => {
           checkInHour: checkInHour,
           checkOutDate: format(dateRange.checkOut, 'yyyy-MM-dd'),
           checkOutHour: '12:00',
-          promoCodes: appliedPromo?.code ? [appliedPromo.code] : undefined,
+          promoCode: appliedPromo?.code || undefined,
         };
 
         console.log('========================================');

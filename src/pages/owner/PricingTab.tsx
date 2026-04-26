@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { CustomPricingRuleResponse } from '../../services/orderService';
+import type { CustomPricingRuleResponse } from '../../services/orderServiceDirectBE';
 import {
   createAdminBlockedDate,
   createAdminCustomPricingRule,
@@ -9,7 +9,7 @@ import {
   getAdminCustomPricingRules,
   getAdminDefaultPricingRule,
   setAdminDefaultPricingRule,
-} from '../../services/orderService';
+} from '../../services/orderServiceDirectBE';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('id-ID', {

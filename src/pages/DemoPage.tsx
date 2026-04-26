@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import heroImage from '../assets/images/hero.png';
@@ -6,20 +6,60 @@ import Calendar from '../components/Calendar';
 import type { CalendarDay } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
 import { getCalendar, ApiError } from '../services/orderServiceDirectBE';
+import ThemePicker, { type ThemeColors, DEFAULT_THEMES } from '../components/ThemePicker';
 
-const HomePage: React.FC = () => {
+const applyThemeToDOM = (theme: ThemeColors) => {
+  const root = document.documentElement;
+  root.style.setProperty('--color-primary-50', theme.primary50);
+  root.style.setProperty('--color-primary-100', theme.primary100);
+  root.style.setProperty('--color-primary-200', theme.primary200);
+  root.style.setProperty('--color-primary-300', theme.primary300);
+  root.style.setProperty('--color-primary-400', theme.primary400);
+  root.style.setProperty('--color-primary-500', theme.primary500);
+  root.style.setProperty('--color-primary-600', theme.primary600);
+  root.style.setProperty('--color-primary-700', theme.primary700);
+  root.style.setProperty('--color-primary-800', theme.primary800);
+  root.style.setProperty('--color-primary-900', theme.primary900);
+  root.style.setProperty('--color-gold-50', theme.gold50);
+  root.style.setProperty('--color-gold-100', theme.gold100);
+  root.style.setProperty('--color-gold-200', theme.gold200);
+  root.style.setProperty('--color-gold-300', theme.gold300);
+  root.style.setProperty('--color-gold-400', theme.gold400);
+  root.style.setProperty('--color-gold-500', theme.gold500);
+  root.style.setProperty('--color-gold-600', theme.gold600);
+  root.style.setProperty('--color-gold-700', theme.gold700);
+  root.style.setProperty('--color-gold-800', theme.gold800);
+  root.style.setProperty('--color-gold-900', theme.gold900);
+};
+
+const DemoPage: React.FC = () => {
   const { t, localePath } = useTranslation();
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial month calendar data on mount (only once, not on every render)
+  const savedThemeName = typeof window !== 'undefined'
+    ? localStorage.getItem('demo-theme') || DEFAULT_THEMES[1].name
+    : DEFAULT_THEMES[1].name;
+
+  const [currentTheme, setCurrentTheme] = useState<ThemeColors>(
+    DEFAULT_THEMES.find(t => t.name === savedThemeName) || DEFAULT_THEMES[1]
+  );
+
+  useEffect(() => {
+    applyThemeToDOM(currentTheme);
+  }, [currentTheme]);
+
+  const handleThemeChange = useCallback((theme: ThemeColors) => {
+    setCurrentTheme(theme);
+    localStorage.setItem('demo-theme', theme.name);
+  }, []);
+
   useEffect(() => {
     const initialMonth = format(new Date(), 'yyyy-MM');
     fetchCalendarData(initialMonth);
-  }, []); // Empty dependency array = runs only on mount
+  }, []);
 
-  // Fetch calendar data for current month
   const fetchCalendarData = async (month: string) => {
     try {
       setLoading(true);
@@ -28,10 +68,8 @@ const HomePage: React.FC = () => {
       setCalendarData(response.days);
     } catch (err) {
       if (err instanceof ApiError) {
-        console.error('Failed to fetch calendar data:', err.message);
         setError('Failed to load availability. Please try again later.');
       } else {
-        console.error('Unexpected error:', err);
         setError('An unexpected error occurred.');
       }
     } finally {
@@ -40,31 +78,48 @@ const HomePage: React.FC = () => {
   };
 
   const scrollToAvailability = () => {
-    document.getElementById('availability')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('demo-availability')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const p = (shade: number) => `var(--color-primary-${shade})`;
+  const g = (shade: number) => `var(--color-gold-${shade})`;
+
   return (
-    <div>
+    <div style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {/* Demo Banner */}
+      <div
+        className="text-center py-2 text-sm font-medium"
+        style={{ backgroundColor: currentTheme.gold600, color: 'white' }}
+      >
+        Theme Demo Mode &mdash; Use the color picker (bottom right) to customize
+      </div>
+
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Hero Image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${heroImage})` }}
-        ></div>
-
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary-900/40 via-primary-900/50 to-primary-900/60"></div>
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-b"
+          style={{
+            background: `linear-gradient(to bottom, ${currentTheme.primary900}66, ${currentTheme.primary900}80, ${currentTheme.primary900}99)`,
+          }}
+        />
 
         <div className="relative z-10 text-center text-white px-6">
-          <h1 className="text-5xl md:text-7xl font-serif mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl mb-6 leading-tight" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
             {t.home.heroTitle}
           </h1>
-          <p className="text-xl md:text-2xl mb-8 font-light tracking-wide max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl mb-8 font-light tracking-wide max-w-2xl mx-auto" style={{ color: currentTheme.primary200 }}>
             {t.home.heroSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-            <button onClick={scrollToAvailability} className="btn-gold inline-block">
+            <button
+              onClick={scrollToAvailability}
+              className="inline-block px-8 py-3 uppercase tracking-wider text-sm font-medium text-white transition-all duration-300"
+              style={{ backgroundColor: currentTheme.gold600 }}
+            >
               {t.home.heroButton}
             </button>
             <a
@@ -79,20 +134,23 @@ const HomePage: React.FC = () => {
               Pesan via WhatsApp
             </a>
           </div>
-          <p className="text-sm text-primary-200 mb-4 max-w-lg mx-auto">
+          <p className="text-sm max-w-lg mx-auto" style={{ color: currentTheme.primary200 }}>
             Jika ingin pesan cepat dengan bantuan admin, hubungin lewat WA untuk bantuan langsung.
           </p>
         </div>
       </section>
 
       {/* Introduction Section */}
-      <section className="section-padding bg-white">
-        <div className="container-custom">
+      <section className="py-16 md:py-24 px-6 md:px-12" style={{ backgroundColor: 'white' }}>
+        <div className="max-w-7xl mx-auto">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-serif mb-6 text-primary-900">
+            <h2
+              className="text-4xl md:text-5xl mb-6"
+              style={{ color: p(900), fontFamily: 'Playfair Display, Georgia, serif' }}
+            >
               {t.home.introTitle}
             </h2>
-            <p className="text-lg text-primary-700 leading-relaxed mb-8">
+            <p className="text-lg leading-relaxed mb-8" style={{ color: p(700) }}>
               {t.home.introText}
             </p>
           </div>
@@ -100,64 +158,54 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="section-padding bg-primary-50">
-        <div className="container-custom">
+      <section className="py-16 md:py-24 px-6 md:px-12" style={{ backgroundColor: p(50) }}>
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
+            {[
+              { title: t.home.zenTitle, text: t.home.zenText, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+              { title: t.home.natureTitle, text: t.home.natureText, icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
+              { title: t.home.energyTitle, text: t.home.energyText, icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' },
+            ].map((feature, i) => (
+              <div key={i} className="text-center">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+                  style={{ backgroundColor: g(600) }}
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
+                  </svg>
+                </div>
+                <h3
+                  className="text-2xl mb-3"
+                  style={{ color: p(900), fontFamily: 'Playfair Display, Georgia, serif' }}
+                >
+                  {feature.title}
+                </h3>
+                <p style={{ color: p(700) }}>{feature.text}</p>
               </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">{t.home.zenTitle}</h3>
-              <p className="text-primary-700">
-                {t.home.zenText}
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">{t.home.natureTitle}</h3>
-              <p className="text-primary-700">
-                {t.home.natureText}
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-serif mb-3 text-primary-900">{t.home.energyTitle}</h3>
-              <p className="text-primary-700">
-                {t.home.energyText}
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Amenities Section */}
-      <section className="section-padding bg-white">
-        <div className="container-custom">
-          <h2 className="text-4xl md:text-5xl font-serif text-center mb-16 text-primary-900">
+      <section className="py-16 md:py-24 px-6 md:px-12" style={{ backgroundColor: 'white' }}>
+        <div className="max-w-7xl mx-auto">
+          <h2
+            className="text-4xl md:text-5xl text-center mb-16"
+            style={{ color: p(900), fontFamily: 'Playfair Display, Georgia, serif' }}
+          >
             {t.home.amenitiesTitle}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {t.home.amenities.map((amenity, index) => (
               <div key={index} className="text-center">
-                <div className="text-gold-600 mb-2">
+                <div className="mb-2" style={{ color: g(600) }}>
                   <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <p className="text-sm text-primary-700 uppercase tracking-wide">{amenity}</p>
+                <p className="text-sm uppercase tracking-wide" style={{ color: p(700) }}>{amenity}</p>
               </div>
             ))}
           </div>
@@ -165,19 +213,25 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Availability Calendar Section */}
-      <section id="availability" className="section-padding bg-primary-50">
-        <div className="container-custom">
-          <h2 className="text-4xl md:text-5xl font-serif text-center mb-4 text-primary-900">
+      <section id="demo-availability" className="py-16 md:py-24 px-6 md:px-12" style={{ backgroundColor: p(50) }}>
+        <div className="max-w-7xl mx-auto">
+          <h2
+            className="text-4xl md:text-5xl text-center mb-4"
+            style={{ color: p(900), fontFamily: 'Playfair Display, Georgia, serif' }}
+          >
             {t.home.availabilityTitle}
           </h2>
-          <p className="text-lg text-primary-700 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-lg text-center mb-12 max-w-2xl mx-auto" style={{ color: p(700) }}>
             {t.home.availabilityText}
           </p>
 
           <div className="max-w-3xl mx-auto">
             {loading && (
-              <div className="text-center text-primary-700 py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold-600 mb-4"></div>
+              <div className="text-center py-12" style={{ color: p(700) }}>
+                <div
+                  className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 mb-4"
+                  style={{ borderColor: g(600) }}
+                />
                 <p>Loading availability...</p>
               </div>
             )}
@@ -197,9 +251,12 @@ const HomePage: React.FC = () => {
               />
             )}
 
-            {/* Book Now Button */}
             <div className="text-center mt-8">
-              <Link to={localePath('/book')} className="btn-gold inline-block">
+              <Link
+                to={localePath('/book')}
+                className="inline-block px-8 py-3 uppercase tracking-wider text-sm font-medium text-white transition-all duration-300"
+                style={{ backgroundColor: g(600) }}
+              >
                 {t.nav.bookNow}
               </Link>
             </div>
@@ -208,16 +265,23 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="section-padding bg-primary-900 text-white">
-        <div className="container-custom text-center">
-          <h2 className="text-4xl md:text-5xl font-serif mb-6">
+      <section className="py-16 md:py-24 px-6 md:px-12 text-white" style={{ backgroundColor: p(900) }}>
+        <div className="max-w-7xl mx-auto text-center">
+          <h2
+            className="text-4xl md:text-5xl mb-6"
+            style={{ fontFamily: 'Playfair Display, Georgia, serif' }}
+          >
             {t.home.ctaTitle}
           </h2>
-          <p className="text-xl mb-8 text-primary-200 max-w-2xl mx-auto">
+          <p className="text-xl mb-8 max-w-2xl mx-auto" style={{ color: p(200) }}>
             {t.home.ctaText}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to={localePath('/book')} className="btn-gold inline-block">
+            <Link
+              to={localePath('/book')}
+              className="inline-block px-8 py-3 uppercase tracking-wider text-sm font-medium text-white transition-all duration-300"
+              style={{ backgroundColor: g(600) }}
+            >
               {t.home.ctaButton}
             </Link>
             <a
@@ -232,13 +296,16 @@ const HomePage: React.FC = () => {
               Pesan via WhatsApp
             </a>
           </div>
-          <p className="text-sm text-primary-300 mt-4 max-w-lg mx-auto">
+          <p className="text-sm mt-4 max-w-lg mx-auto" style={{ color: p(300) }}>
             Jika ingin pesan cepat dengan bantuan admin, hubungin lewat WA untuk bantuan langsung.
           </p>
         </div>
       </section>
+
+      {/* Theme Picker Floating Card */}
+      <ThemePicker currentTheme={currentTheme} onThemeChange={handleThemeChange} />
     </div>
   );
 };
 
-export default HomePage;
+export default DemoPage;

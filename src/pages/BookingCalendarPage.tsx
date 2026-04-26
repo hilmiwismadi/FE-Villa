@@ -14,8 +14,8 @@ import {
   ApiError,
   type AvailabilityResponse,
   type CustomPricingRuleResponse
-} from '../services/orderService';
-import { validatePromo } from '../services/promoService';
+} from '../services/orderServiceDirectBE';
+import { validatePromo } from '../services/promoServiceDirectBE';
 
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();

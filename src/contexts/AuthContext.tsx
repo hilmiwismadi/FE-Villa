@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { TokenResponse, UserInfo } from '../services/authService';
-import * as authService from '../services/authService';
+import type { TokenResponse, UserInfo } from '../services/authServiceDirectBE';
+import * as authService from '../services/authServiceDirectBE';
 
 interface AuthState {
   accessToken: string | null;

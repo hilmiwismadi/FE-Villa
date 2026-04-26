@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { DashboardResponse, OrderResponse, RevenueResponse } from '../../services/orderService';
-import { getAdminOrders, getDashboard, getRevenue } from '../../services/orderService';
+import type { DashboardResponse, OrderResponse, RevenueResponse } from '../../services/orderServiceDirectBE';
+import { getAdminOrders, getDashboard, getRevenue } from '../../services/orderServiceDirectBE';
 
 const statusLabels: Record<string, string> = {
   in_transaction: 'In Transaction',

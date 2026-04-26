@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { OrderResponse } from '../../services/orderService';
-import { getAdminOrders, checkInOrder, completeOrder, ApiError } from '../../services/orderService';
+import type { OrderResponse } from '../../services/orderServiceDirectBE';
+import { getAdminOrders, checkInOrder, completeOrder, ApiError } from '../../services/orderServiceDirectBE';
 import { useToast } from '../../contexts/ToastContext';
 
 type ActiveBooking = OrderResponse;

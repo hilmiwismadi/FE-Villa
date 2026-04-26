@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { validatePromo as promoValidatePromo, ApiError } from '../services/promoService';
+import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
 import { normalizePhoneNumber, isValidPhoneNumber } from '../utils/phone';
 import { useAuth } from '../contexts/AuthContext';
 

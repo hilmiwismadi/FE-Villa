@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { OrderResponse } from '../../services/orderService';
-import { getAdminOrders, approveOrder, rejectOrder, ApiError } from '../../services/orderService';
+import type { OrderResponse } from '../../services/orderServiceDirectBE';
+import { getAdminOrders, approveOrder, rejectOrder, ApiError } from '../../services/orderServiceDirectBE';
 import { useToast } from '../../contexts/ToastContext';
 
 type PendingBooking = OrderResponse;

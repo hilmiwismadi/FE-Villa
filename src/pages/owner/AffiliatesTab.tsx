@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
 import { useToast } from '../../contexts/ToastContext';
-import { getPromo as fetchPromo } from '../../services/promoService';
+import { getPromo as fetchPromo } from '../../services/promoServiceDirectBE';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 

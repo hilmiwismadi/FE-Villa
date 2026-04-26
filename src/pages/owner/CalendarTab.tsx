@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CalendarDay } from '../../types';
-import { createAdminBlockedDate, getCalendar } from '../../services/orderService';
+import { createAdminBlockedDate, getCalendar } from '../../services/orderServiceDirectBE';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

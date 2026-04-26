@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { format } from 'date-fns';
-import { getOrder } from '../services/orderService';
+import { getOrder } from '../services/orderServiceDirectBE';
 
 const ConfirmationPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();

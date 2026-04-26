@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from './ownerData';
-import { getAdminOrders, type OrderResponse } from '../../services/orderService';
+import { getAdminOrders, type OrderResponse } from '../../services/orderServiceDirectBE';
 
 const PreviousTab: React.FC = () => {
   const [orders, setOrders] = useState<OrderResponse[]>([]);

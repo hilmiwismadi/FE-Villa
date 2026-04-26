@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { PromoResponse, PromoUsage } from '../../services/promoService';
+import type { PromoResponse, PromoUsage } from '../../services/promoServiceDirectBE';
 import { useToast } from '../../contexts/ToastContext';
-import { createPromo, deactivatePromo, getPromoUsage, listPromos } from '../../services/promoService';
+import { createPromo, deactivatePromo, getPromoUsage, listPromos } from '../../services/promoServiceDirectBE';
 
 type PromoSection = 'overview' | 'create' | 'usage' | 'commissions';
 
