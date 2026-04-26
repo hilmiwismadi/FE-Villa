@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import heroImage from '../assets/images/hero.png';
 import Calendar from '../components/Calendar';
+import VillaCarousel from '../components/VillaCarousel';
 import type { CalendarDay } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
 import { getCalendar, ApiError } from '../services/orderServiceDirectBE';
@@ -85,22 +86,44 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Introduction Section */}
+      {/* Introduction + Carousel Section */}
       <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-4xl md:text-5xl font-serif mb-6 text-primary-900">
               {t.home.introTitle}
             </h2>
-            <p className="text-lg text-primary-700 leading-relaxed mb-8">
+            <p className="text-lg text-primary-700 leading-relaxed mb-12">
               {t.home.introText}
             </p>
+          </div>
+        </div>
+        <VillaCarousel />
+      </section>
+
+      {/* Amenities Section */}
+      <section className="section-padding bg-primary-50">
+        <div className="container-custom">
+          <h2 className="text-4xl md:text-5xl font-serif text-center mb-16 text-primary-900">
+            {t.home.amenitiesTitle}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            {t.home.amenities.map((amenity, index) => (
+              <div key={index} className="text-center">
+                <div className="text-gold-600 mb-2">
+                  <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-sm text-primary-700 uppercase tracking-wide">{amenity}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="section-padding bg-primary-50">
+      <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="text-center">
@@ -139,27 +162,6 @@ const HomePage: React.FC = () => {
                 {t.home.energyText}
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Amenities Section */}
-      <section className="section-padding bg-white">
-        <div className="container-custom">
-          <h2 className="text-4xl md:text-5xl font-serif text-center mb-16 text-primary-900">
-            {t.home.amenitiesTitle}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            {t.home.amenities.map((amenity, index) => (
-              <div key={index} className="text-center">
-                <div className="text-gold-600 mb-2">
-                  <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <p className="text-sm text-primary-700 uppercase tracking-wide">{amenity}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
