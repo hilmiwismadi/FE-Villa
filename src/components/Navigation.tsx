@@ -1,10 +1,33 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from '../i18n/LanguageContext';
+
+const NavItem: React.FC<{
+  to: string;
+  children: React.ReactNode;
+  active?: boolean;
+}> = ({ to, children, active }) => {
+  const base = 'text-sm uppercase tracking-wider transition-colors pb-1 border-b-2';
+  const activeClass = active
+    ? 'text-primary-900 border-primary-900'
+    : 'text-primary-700 border-transparent hover:text-primary-900 hover:border-primary-900';
+
+  return (
+    <Link to={to} className={`${base} ${activeClass}`}>
+      {children}
+    </Link>
+  );
+};
 
 const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { t, localePath, lang } = useTranslation();
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    const pathname = location.pathname.replace(/^\/en/, '') || '/';
+    return pathname === path || pathname.startsWith(path + '/');
+  };
 
   return (
     <nav className="bg-white border-b border-primary-200 sticky top-0 z-50">
@@ -17,18 +40,15 @@ const Navigation: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to={localePath('/')}
-              className="text-sm uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
-            >
+            <NavItem to={localePath('/')} active={isActive('/') && !isActive('/villa') && !isActive('/rules') && !isActive('/book')}>
               {t.nav.home}
-            </Link>
-            <Link
-              to={localePath('/villa')}
-              className="text-sm uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
-            >
+            </NavItem>
+            <NavItem to={localePath('/villa')} active={isActive('/villa')}>
               {t.nav.theVilla}
-            </Link>
+            </NavItem>
+            <NavItem to={localePath('/rules')} active={isActive('/rules')}>
+              Peraturan
+            </NavItem>
             <Link
               to={localePath('/book')}
               className="btn-primary"
@@ -72,20 +92,15 @@ const Navigation: React.FC = () => {
         {isOpen && (
           <div className="md:hidden py-4 px-4 border-t border-primary-200">
             <div className="flex flex-col space-y-4">
-              <Link
-                to={localePath('/')}
-                className="text-sm uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
+              <NavItem to={localePath('/')} active={isActive('/') && !isActive('/villa') && !isActive('/rules') && !isActive('/book')}>
                 {t.nav.home}
-              </Link>
-              <Link
-                to={localePath('/villa')}
-                className="text-sm uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
+              </NavItem>
+              <NavItem to={localePath('/villa')} active={isActive('/villa')}>
                 {t.nav.theVilla}
-              </Link>
+              </NavItem>
+              <NavItem to={localePath('/rules')} active={isActive('/rules')}>
+                Peraturan
+              </NavItem>
               <Link
                 to={localePath('/book')}
                 className="btn-primary text-center"
