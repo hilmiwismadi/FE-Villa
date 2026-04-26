@@ -46,6 +46,7 @@ const Calendar: React.FC<CalendarProps> = ({
   holidayDates = []
 }) => {
   const [currentMonth, setCurrentMonth] = useState(defaultMonth ? parse(defaultMonth, 'yyyy-MM', new Date()) : new Date());
+  const [tappedDate, setTappedDate] = useState<string | null>(null);
   const today = startOfToday();
   const { t, dateFnsLocale } = useTranslation();
 
@@ -296,11 +297,12 @@ const Calendar: React.FC<CalendarProps> = ({
             return (
               <div
                 key={date.toString()}
+                onClick={() => setTappedDate(tappedDate === dateStr ? null : dateStr)}
                 className={`
                   relative group aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                   ${disabled ? 'text-primary-300' : 'text-primary-900'}
                   ${isToday(date) ? 'border-2 border-gold-600' : ''}
-                  ${booked || blocked ? 'bg-red-50 line-through' : ''}
+                  ${booked || blocked ? 'bg-primary-200 line-through' : ''}
                   ${(isWeekend || hasCustomPricing) && !disabled ? 'text-red-600 font-semibold' : ''}
                 `}
               >
@@ -310,8 +312,13 @@ const Calendar: React.FC<CalendarProps> = ({
                     {formatPrice(price)}
                   </span>
                 )}
-                {customPricingTooltip && (
-                  <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg group-hover:block">
+                {booked && (
+                  <div className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg ${tappedDate === dateStr ? 'block' : 'hidden group-hover:block'}`}>
+                    Tanggal sudah dibooking
+                  </div>
+                )}
+                {!booked && customPricingTooltip && (
+                  <div className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg ${tappedDate === dateStr ? 'block' : 'hidden group-hover:block'}`}>
                     {customPricingTooltip}
                   </div>
                 )}
@@ -330,7 +337,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 ${selected ? 'bg-primary-900 text-white hover:bg-primary-900' : ''}
                 ${inRange ? 'bg-primary-100' : ''}
                 ${isToday(date) && !selected ? 'border-2 border-gold-600' : ''}
-                ${booked || blocked ? 'bg-red-50 line-through' : ''}
+                ${booked || blocked ? 'bg-primary-200 line-through' : ''}
                 ${(isWeekend || hasCustomPricing) && !disabled && !selected ? 'text-red-600 font-semibold' : ''}
               `}
             >
@@ -340,8 +347,13 @@ const Calendar: React.FC<CalendarProps> = ({
                   {formatPrice(price)}
                 </span>
               )}
-              {customPricingTooltip && (
-                <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg group-hover:block">
+              {booked && (
+                <div className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg ${tappedDate === dateStr ? 'block' : 'hidden group-hover:block'}`}>
+                  Tanggal sudah dibooking
+                </div>
+              )}
+              {!booked && customPricingTooltip && (
+                <div className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-[180px] -translate-x-1/2 rounded-md bg-primary-900 px-2 py-1 text-center text-[11px] text-white shadow-lg ${tappedDate === dateStr ? 'block' : 'hidden group-hover:block'}`}>
                   {customPricingTooltip}
                 </div>
               )}
@@ -365,7 +377,7 @@ const Calendar: React.FC<CalendarProps> = ({
           </>
         )}
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-50 rounded border border-red-200"></div>
+          <div className="w-4 h-4 bg-primary-200 rounded"></div>
           <span>{t.calendar.unavailable}</span>
         </div>
         <div className="flex items-center gap-2">
