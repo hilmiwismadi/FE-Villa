@@ -4,7 +4,7 @@
  * Base URL: https://yutaka-auth.izcy.tech
  */
 
-const BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || 'https://yutaka-auth.izcy.tech';
+const BASE_URL = import.meta.env.VITE_AUTH_SERVICE_URL || '/bff';
 
 import { ApiError } from './errors';
 

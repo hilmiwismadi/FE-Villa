@@ -4,7 +4,7 @@
  * Base URL: https://yutaka-order.izcy.tech
  */
 
-const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || 'https://yutaka-order.izcy.tech';
+const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || '/bff';
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';

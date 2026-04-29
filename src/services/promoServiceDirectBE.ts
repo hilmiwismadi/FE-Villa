@@ -4,7 +4,7 @@
  * Base URL: https://yutaka-promo.izcy.tech
  */
 
-const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || 'https://yutaka-promo.izcy.tech';
+const BASE_URL = import.meta.env.VITE_PROMO_SERVICE_URL || '/bff';
 
 import { ApiError } from './errors';
 
