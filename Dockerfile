@@ -4,9 +4,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 
-ARG VITE_AUTH_SERVICE_URL=https://yutaka-auth.izcy.tech
-ARG VITE_ORDER_SERVICE_URL=https://yutaka-order.izcy.tech
-ARG VITE_PROMO_SERVICE_URL=https://yutaka-promo.izcy.tech
+ARG VITE_AUTH_SERVICE_URL=https://yutaka-bff.izcy.tech/bff
+ARG VITE_ORDER_SERVICE_URL=https://yutaka-bff.izcy.tech/bff
+ARG VITE_PROMO_SERVICE_URL=https://yutaka-bff.izcy.tech/bff
 ARG VITE_BFF_URL=https://yutaka-bff.izcy.tech
 ARG VITE_WHATSAPP_BOT_NUMBER=62895413313375
 
