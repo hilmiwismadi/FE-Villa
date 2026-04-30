@@ -89,7 +89,7 @@ const PromosTab: React.FC = () => {
 
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [newPromoCode, setNewPromoCode] = useState('');
-  const [newPromoType, setNewPromoType] = useState<'affiliate' | 'automatic'>('affiliate');
+  const [newPromoType, setNewPromoType] = useState<'affiliate' | 'automatic'>('automatic');
   const [newDiscountType, setNewDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [newDiscountValue, setNewDiscountValue] = useState('');
   const [newDayCondition, setNewDayCondition] = useState<'all' | 'weekday' | 'weekend' | 'custom'>('all');
@@ -454,9 +454,12 @@ const PromosTab: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <input className="input-field" placeholder="Code" value={newPromoCode} onChange={(e) => setNewPromoCode(e.target.value)} />
                 <select className="input-field" value={newPromoType} onChange={(e) => setNewPromoType(e.target.value as 'affiliate' | 'automatic')}>
-                  <option value="affiliate">Affiliate</option>
                   <option value="automatic">Automatic</option>
+                  <option value="affiliate" disabled>Affiliate (use Affiliates tab)</option>
                 </select>
+                {newPromoType === 'affiliate' && (
+                  <p className="text-xs text-amber-600 md:col-span-2 lg:col-span-4">Affiliate promo codes should be created from the <a href="/owner/affiliates" className="underline font-medium">Affiliates tab</a>.</p>
+                )}
                 <select className="input-field" value={newDiscountType} onChange={(e) => setNewDiscountType(e.target.value as 'percentage' | 'fixed')}>
                   <option value="percentage">Percentage</option>
                   <option value="fixed">Fixed</option>
@@ -497,20 +500,13 @@ const PromosTab: React.FC = () => {
                   <option value="date">Date</option>
                   <option value="duration_days">Duration (days)</option>
                 </select>
-                {newPromoType === 'affiliate' ? (
-                  <>
-                    <input className="input-field" placeholder="Affiliator ID" value={newAffiliatorId} onChange={(e) => setNewAffiliatorId(e.target.value)} />
-                    <input className="input-field" type="number" placeholder="Commission Amount" value={newCommissionAmount} onChange={(e) => setNewCommissionAmount(e.target.value)} />
-                  </>
-                ) : (
-                  <>
-                    <select className="input-field" value={newTriggerType} onChange={(e) => setNewTriggerType(e.target.value as 'booking_count' | 'total_nights')}>
-                      <option value="booking_count">Trigger: booking_count</option>
-                      <option value="total_nights">Trigger: total_nights</option>
-                    </select>
-                    <input className="input-field" type="number" placeholder="Trigger Threshold" value={newTriggerThreshold} onChange={(e) => setNewTriggerThreshold(e.target.value)} />
-                  </>
-                )}
+                <>
+                  <select className="input-field" value={newTriggerType} onChange={(e) => setNewTriggerType(e.target.value as 'booking_count' | 'total_nights')}>
+                    <option value="booking_count">Trigger: booking_count</option>
+                    <option value="total_nights">Trigger: total_nights</option>
+                  </select>
+                  <input className="input-field" type="number" placeholder="Trigger Threshold" value={newTriggerThreshold} onChange={(e) => setNewTriggerThreshold(e.target.value)} />
+                </>
                 {newExpiryType === 'date' ? (
                   <input className="input-field" type="date" value={newExpiryDate} onChange={(e) => setNewExpiryDate(e.target.value)} />
                 ) : null}

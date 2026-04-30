@@ -146,6 +146,10 @@ export const bffService = {
     commissionRate: number;
     discountType: string;
     discountValue: number;
+    expiryType?: 'date' | 'duration_days' | 'none';
+    expiryDate?: string;
+    expiryDurationDays?: number;
+    maxUsage?: number;
   }) =>
     bffRequest<{ message: string }>(`/bff/affiliate/${id}/code`, {
       method: 'POST',

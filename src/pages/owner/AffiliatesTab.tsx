@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
 import { useToast } from '../../contexts/ToastContext';
-import { getPromo as fetchPromo } from '../../services/promoServiceDirectBE';
+import { getPromo as fetchPromo, getPromoUsage } from '../../services/promoServiceDirectBE';
+import type { PromoUsage } from '../../services/promoServiceDirectBE';
 import { formatNumberWithDots, parseFormattedNumber } from '../../utils/numberFormat';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
 
 const AffiliatesTab: React.FC = () => {
   const { toast } = useToast();
@@ -14,13 +16,18 @@ const AffiliatesTab: React.FC = () => {
   const [showAddCode, setShowAddCode] = useState<string | null>(null);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [codeDetails, setCodeDetails] = useState<Record<string, any>>({});
+  const [codeUsages, setCodeUsages] = useState<Record<string, { rows: PromoUsage[]; total: number; loading: boolean }>>({});
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [codeForm, setCodeForm] = useState({
     code: '',
     commissionRate: '',
     discountType: 'percentage' as 'percentage' | 'fixed',
-    discountValue: '10'
+    discountValue: '10',
+    expiryType: 'none' as 'date' | 'duration_days' | 'none',
+    expiryDate: '',
+    expiryDurationDays: '',
+    maxUsage: '',
   });
 
   const load = () => {
@@ -51,9 +58,13 @@ const AffiliatesTab: React.FC = () => {
         commissionRate: parseFormattedNumber(codeForm.commissionRate),
         discountType: codeForm.discountType,
         discountValue: parseFormattedNumber(codeForm.discountValue),
+        expiryType: codeForm.expiryType,
+        expiryDate: codeForm.expiryType === 'date' ? codeForm.expiryDate : undefined,
+        expiryDurationDays: codeForm.expiryType === 'duration_days' ? Number(codeForm.expiryDurationDays) || undefined : undefined,
+        maxUsage: codeForm.maxUsage ? Number(codeForm.maxUsage) : undefined,
       });
       toast('Promo code added successfully', 'success');
-      setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10' });
+      setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10', expiryType: 'none', expiryDate: '', expiryDurationDays: '', maxUsage: '' });
       setShowAddCode(null);
       load();
     } catch (e: any) {
@@ -98,6 +109,18 @@ const AffiliatesTab: React.FC = () => {
       } catch {
         setCodeDetails(prev => ({ ...prev, [code]: null }));
       }
+    }
+    // Load usage data
+    loadCodeUsage(code);
+  };
+
+  const loadCodeUsage = async (code: string) => {
+    setCodeUsages(prev => ({ ...prev, [code]: { rows: [], total: 0, loading: true } }));
+    try {
+      const usage = await getPromoUsage(code, 1, 50);
+      setCodeUsages(prev => ({ ...prev, [code]: { rows: usage.usages, total: usage.total, loading: false } }));
+    } catch {
+      setCodeUsages(prev => ({ ...prev, [code]: { rows: [], total: 0, loading: false } }));
     }
   };
 
@@ -149,7 +172,7 @@ const AffiliatesTab: React.FC = () => {
                   <span className={`text-xs px-2 py-1 rounded-full ${a.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {a.is_active ? 'Active' : 'Inactive'}
                   </span>
-                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10' }); }}>Add Code</button>
+                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10', expiryType: 'none', expiryDate: '', expiryDurationDays: '', maxUsage: '' }); }}>Add Code</button>
                   <button className="text-sm text-red-600 hover:text-red-800" onClick={() => handleDelete(a.id)}>Delete</button>
                 </div>
               </div>
@@ -207,6 +230,66 @@ const AffiliatesTab: React.FC = () => {
                                   )}
                                 </div>
                               )}
+
+                              {/* Usage Transactions Table */}
+                              {detail && (
+                                <div className="mt-3 border-t border-primary-200 pt-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-medium text-primary-700">Usage Transactions</p>
+                                    <button
+                                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                      onClick={() => loadCodeUsage(code)}
+                                    >
+                                      {codeUsages[code]?.loading ? 'Loading...' : codeUsages[code] ? 'Refresh' : 'Load Usage'}
+                                    </button>
+                                  </div>
+                                  {codeUsages[code] && codeUsages[code].rows.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-xs">
+                                        <thead>
+                                          <tr className="text-left text-primary-600 border-b border-primary-200">
+                                            <th className="pb-1 pr-3 font-medium">Guest</th>
+                                            <th className="pb-1 pr-3 font-medium">Order ID</th>
+                                            <th className="pb-1 pr-3 font-medium">Check-in</th>
+                                            <th className="pb-1 pr-3 font-medium text-right">Discount</th>
+                                            <th className="pb-1 pr-3 font-medium text-right">Commission</th>
+                                            <th className="pb-1 pr-3 font-medium">Status</th>
+                                            <th className="pb-1 font-medium">Date</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {codeUsages[code].rows.map((u, i) => (
+                                            <tr key={i} className="border-b border-primary-100 last:border-0">
+                                              <td className="py-1.5 pr-3">
+                                                <div className="font-medium text-primary-900">{u.guestName || '-'}</div>
+                                                <div className="text-primary-400">{u.guestPhone || '-'}</div>
+                                              </td>
+                                              <td className="py-1.5 pr-3 text-primary-700 font-mono text-[10px]">{u.orderId?.slice(-8) || '-'}</td>
+                                              <td className="py-1.5 pr-3">{fmtDate(u.bookingCheckInDate)}</td>
+                                              <td className="py-1.5 pr-3 text-right text-green-700">{fmt(u.discountApplied)}</td>
+                                              <td className="py-1.5 pr-3 text-right text-amber-700">{fmt(u.commissionAmount)}</td>
+                                              <td className="py-1.5 pr-3">
+                                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                                                  u.commissionStatus === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                                  u.commissionStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                  u.commissionStatus === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                  'bg-gray-100 text-gray-700'
+                                                }`}>{u.commissionStatus}</span>
+                                              </td>
+                                              <td className="py-1.5 text-primary-500">{fmtDate(u.usedAt)}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                      {codeUsages[code].total > codeUsages[code].rows.length && (
+                                        <p className="text-[10px] text-primary-400 mt-1">Showing {codeUsages[code].rows.length} of {codeUsages[code].total}</p>
+                                      )}
+                                    </div>
+                                  ) : codeUsages[code] ? (
+                                    <p className="text-xs text-primary-400">No usage recorded yet.</p>
+                                  ) : null}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -256,7 +339,33 @@ const AffiliatesTab: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                    <div>
+                      <label className="text-sm text-primary-700">Expiry</label>
+                      <select className="input-field mt-1" value={codeForm.expiryType} onChange={(e) => setCodeForm({ ...codeForm, expiryType: e.target.value as 'date' | 'duration_days' | 'none' })}>
+                        <option value="none">No Expiry</option>
+                        <option value="date">Specific Date</option>
+                        <option value="duration_days">Duration (days)</option>
+                      </select>
+                    </div>
+                    {codeForm.expiryType === 'date' && (
+                      <div>
+                        <label className="text-sm text-primary-700">Expiry Date</label>
+                        <input type="date" className="input-field mt-1" value={codeForm.expiryDate} onChange={(e) => setCodeForm({ ...codeForm, expiryDate: e.target.value })} />
+                      </div>
+                    )}
+                    {codeForm.expiryType === 'duration_days' && (
+                      <div>
+                        <label className="text-sm text-primary-700">Duration (days)</label>
+                        <input type="number" className="input-field mt-1" placeholder="30" value={codeForm.expiryDurationDays} onChange={(e) => setCodeForm({ ...codeForm, expiryDurationDays: e.target.value })} />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-sm text-primary-700">Max Usage</label>
+                      <input type="number" className="input-field mt-1" placeholder="Unlimited" value={codeForm.maxUsage} onChange={(e) => setCodeForm({ ...codeForm, maxUsage: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-3">
                     <button className="btn-primary" onClick={() => handleAddCode(a.id)}>Add Code</button>
                     <button className="btn-secondary" onClick={() => setShowAddCode(null)}>Cancel</button>
                   </div>
