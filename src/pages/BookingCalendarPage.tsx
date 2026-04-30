@@ -16,6 +16,7 @@ import {
   type CustomPricingRuleResponse
 } from '../services/orderServiceDirectBE';
 import { validatePromo } from '../services/promoServiceDirectBE';
+import { stripStructuredErrorPrefix } from '../services/errors';
 
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
@@ -110,8 +111,7 @@ const BookingCalendarPage: React.FC = () => {
     setDateRange({ checkIn: derivedCheckIn, checkOut: derivedCheckOut });
   }, [derivedCheckIn, derivedCheckOut, setDateRange]);
 
-  // Fetch calendar data for current month
-  const handleMonthChange = async (month: string) => {
+  const loadCalendarMonth = async (month: string) => {
     try {
       const response = await getCalendar(month);
       const daysWithLabel = [...response.days];
@@ -148,10 +148,21 @@ const BookingCalendarPage: React.FC = () => {
     }
   };
 
+  // Fetch calendar data for selected month and clear stale date selection
+  const handleMonthChange = async (month: string) => {
+    setSelectedDates([]);
+    setAppliedPromo(null);
+    setPromoSuccess('');
+    setPromoError('');
+    setPendingDateToAdd(null);
+    setShowConfirmModal(false);
+    await loadCalendarMonth(month);
+  };
+
   // Fetch initial calendar on mount
   useEffect(() => {
     const currentMonth = new Date();
-    handleMonthChange(format(currentMonth, 'yyyy-MM'));
+    loadCalendarMonth(format(currentMonth, 'yyyy-MM'));
   }, []);
 
   // Debug log for selectedDates changes
@@ -306,7 +317,7 @@ const BookingCalendarPage: React.FC = () => {
         });
         setPromoSuccess(`Diskon ditemukan: ${discountText}`);
       } else {
-        setPromoError(response.reason || t.booking.calendar.invalidPromo);
+        setPromoError(stripStructuredErrorPrefix(response.reason) || t.booking.calendar.invalidPromo);
         setAppliedPromo(null);
       }
     } catch (error) {

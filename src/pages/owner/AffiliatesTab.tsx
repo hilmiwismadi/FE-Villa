@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { bffService } from '../../services/bffService';
 import { useToast } from '../../contexts/ToastContext';
 import { getPromo as fetchPromo } from '../../services/promoServiceDirectBE';
+import { formatNumberWithDots, parseFormattedNumber } from '../../utils/numberFormat';
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
@@ -15,7 +16,12 @@ const AffiliatesTab: React.FC = () => {
   const [codeDetails, setCodeDetails] = useState<Record<string, any>>({});
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', phone: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [codeForm, setCodeForm] = useState({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 });
+  const [codeForm, setCodeForm] = useState({
+    code: '',
+    commissionRate: '',
+    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountValue: '10'
+  });
 
   const load = () => {
     bffService.listAffiliates()
@@ -42,12 +48,12 @@ const AffiliatesTab: React.FC = () => {
     try {
       await bffService.addAffiliateCode(affiliateId, {
         code: codeForm.code,
-        commissionRate: codeForm.commissionRate,
+        commissionRate: parseFormattedNumber(codeForm.commissionRate),
         discountType: codeForm.discountType,
-        discountValue: codeForm.discountValue,
+        discountValue: parseFormattedNumber(codeForm.discountValue),
       });
       toast('Promo code added successfully', 'success');
-      setCodeForm({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 });
+      setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10' });
       setShowAddCode(null);
       load();
     } catch (e: any) {
@@ -143,7 +149,7 @@ const AffiliatesTab: React.FC = () => {
                   <span className={`text-xs px-2 py-1 rounded-full ${a.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {a.is_active ? 'Active' : 'Inactive'}
                   </span>
-                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setCodeForm({ code: '', commissionRate: 0, discountType: 'percentage', discountValue: 10 }); }}>Add Code</button>
+                  <button className="text-sm text-blue-600 hover:text-blue-800" onClick={() => { setShowAddCode(a.id); setCodeForm({ code: '', commissionRate: '', discountType: 'percentage', discountValue: '10' }); }}>Add Code</button>
                   <button className="text-sm text-red-600 hover:text-red-800" onClick={() => handleDelete(a.id)}>Delete</button>
                 </div>
               </div>
@@ -222,18 +228,32 @@ const AffiliatesTab: React.FC = () => {
                     </div>
                     <div>
                       <label className="text-sm text-primary-700">Commission</label>
-                      <input type="number" className="input-field mt-1" value={codeForm.commissionRate || ''} onChange={(e) => setCodeForm({ ...codeForm, commissionRate: Number(e.target.value) })} />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className="input-field mt-1"
+                        placeholder="2.000.000"
+                        value={codeForm.commissionRate}
+                        onChange={(e) => setCodeForm({ ...codeForm, commissionRate: formatNumberWithDots(e.target.value) })}
+                      />
                     </div>
                     <div>
                       <label className="text-sm text-primary-700">Discount Type</label>
-                      <select className="input-field mt-1" value={codeForm.discountType} onChange={(e) => setCodeForm({ ...codeForm, discountType: e.target.value })}>
+                      <select className="input-field mt-1" value={codeForm.discountType} onChange={(e) => setCodeForm({ ...codeForm, discountType: e.target.value as 'percentage' | 'fixed' })}>
                         <option value="percentage">Percentage %</option>
                         <option value="fixed">Fixed Amount</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-sm text-primary-700">Discount Value</label>
-                      <input type="number" className="input-field mt-1" value={codeForm.discountValue || ''} onChange={(e) => setCodeForm({ ...codeForm, discountValue: Number(e.target.value) })} />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className="input-field mt-1"
+                        placeholder={codeForm.discountType === 'fixed' ? '2.000.000' : '10'}
+                        value={codeForm.discountValue}
+                        onChange={(e) => setCodeForm({ ...codeForm, discountValue: formatNumberWithDots(e.target.value) })}
+                      />
                     </div>
                   </div>
                   <div className="flex gap-3">

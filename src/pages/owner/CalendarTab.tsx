@@ -32,6 +32,7 @@ const CalendarTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
+  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [blockDate, setBlockDate] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -58,11 +59,13 @@ const CalendarTab: React.FC = () => {
   const previousMonth = () => {
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
     setSelectedDay(null);
+    setHoveredDay(null);
   };
 
   const nextMonth = () => {
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
     setSelectedDay(null);
+    setHoveredDay(null);
   };
 
   const gridDays = useMemo(() => {
@@ -114,19 +117,23 @@ const CalendarTab: React.FC = () => {
       <div className="flex flex-wrap gap-4 mb-6 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-100 border border-green-300 rounded" />
-          <span className="text-primary-700">Available</span>
+          <span className="text-primary-700">Available (#f0fdf4)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded" />
-          <span className="text-primary-700">Booked</span>
+          <span className="text-primary-700">Booked (#eff6ff)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-amber-100 border border-amber-300 rounded" />
+          <span className="text-primary-700">In Transaction (#fffbeb)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-100 border border-red-300 rounded" />
           <span className="text-primary-700">Blocked</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-amber-100 border border-amber-300 rounded" />
-          <span className="text-primary-700">In Transaction</span>
+          <div className="w-4 h-4 bg-gold-50 border-2 border-gold-500 rounded" />
+          <span className="text-primary-700">Selected day</span>
         </div>
       </div>
 
@@ -154,14 +161,18 @@ const CalendarTab: React.FC = () => {
             ))}
             {gridDays.monthDays.map((day) => {
               const dayNumber = new Date(`${day.date}T00:00:00`).getDate();
+              const isSelected = selectedDay?.date === day.date;
+              const isHovered = hoveredDay === day.date;
               return (
                 <button
                   type="button"
                   key={day.date}
                   onClick={() => setSelectedDay(day)}
+                  onMouseEnter={() => setHoveredDay(day.date)}
+                  onMouseLeave={() => setHoveredDay(null)}
                   className={`min-h-[92px] p-2 border-r border-b border-primary-100 text-left hover:bg-primary-100 transition-colors ${
                     statusConfig[day.status] || 'bg-white'
-                  }`}
+                  } ${isSelected ? 'ring-2 ring-inset ring-gold-500 bg-gold-50' : ''} ${isHovered && !isSelected ? 'ring-1 ring-inset ring-primary-400' : ''}`}
                   title={day.label || day.status}
                 >
                   <div className="text-sm font-medium text-primary-900 mb-1">{dayNumber}</div>

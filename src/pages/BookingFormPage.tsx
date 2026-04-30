@@ -6,6 +6,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
 import { normalizePhoneNumber, isValidPhoneNumber } from '../utils/phone';
 import { useAuth } from '../contexts/AuthContext';
+import { stripStructuredErrorPrefix } from '../services/errors';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -233,7 +234,7 @@ const BookingFormPage: React.FC = () => {
         });
         setPromoSuccess(t.booking.calendar.discountApplied);
       } else {
-        setPromoError(response.reason || t.booking.calendar.invalidPromo);
+        setPromoError(stripStructuredErrorPrefix(response.reason) || t.booking.calendar.invalidPromo);
         setAppliedPromo(null);
       }
     } catch (error) {
@@ -315,9 +316,11 @@ const BookingFormPage: React.FC = () => {
     // Just save form data to context, navigate to review
     // Order will be created on review page
     setGuestInfo({
-      ...formData,
       ...(guestInfo || {}), // Preserve existing orderId and other fields from guestInfo
+      ...formData,
       phone: normalizedPhone,
+      address: '',
+      specialRequests: '',
     });
 
     navigate(localePath('/book/review'));
@@ -484,21 +487,6 @@ const BookingFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Alamat */}
-                <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">
-                    {t.booking.form.address}
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleFormChange}
-                    className="input-field"
-                    placeholder={t.booking.form.addressPlaceholder || 'Alamat lengkap (opsional)'}
-                  />
-                </div>
-
                 {/* Jumlah Orang & Extra Bed */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -570,21 +558,6 @@ const BookingFormPage: React.FC = () => {
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Catatan Khusus */}
-                <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">
-                    {t.booking.form.specialRequests || 'Catatan Khusus'}
-                  </label>
-                  <textarea
-                    name="specialRequests"
-                    value={formData.specialRequests}
-                    onChange={handleFormChange}
-                    className="input-field min-h-[80px]"
-                    placeholder={t.booking.form.specialRequestsPlaceholder || 'Permintaan khusus (opsional)'}
-                    rows={3}
-                  />
                 </div>
 
               </form>

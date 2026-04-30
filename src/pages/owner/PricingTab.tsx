@@ -10,6 +10,7 @@ import {
   getAdminDefaultPricingRule,
   setAdminDefaultPricingRule,
 } from '../../services/orderServiceDirectBE';
+import { formatNumberWithDots, parseFormattedNumber } from '../../utils/numberFormat';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -99,7 +100,7 @@ const PricingTab: React.FC = () => {
   }, [customRules, defaultRule]);
 
   const handleUpdateDefault = async () => {
-    const parsed = Number(defaultPriceInput);
+    const parsed = parseFormattedNumber(defaultPriceInput);
     if (!Number.isFinite(parsed) || parsed <= 0) return;
 
     try {
@@ -119,7 +120,7 @@ const PricingTab: React.FC = () => {
   };
 
   const handleCreateRule = async () => {
-    const parsedAmount = Number(amount);
+    const parsedAmount = parseFormattedNumber(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !startDate || !endDate) return;
     if (frequency === 'weekly' && selectedDays.length === 0) return;
 
@@ -201,11 +202,12 @@ const PricingTab: React.FC = () => {
               <p className="text-xs text-primary-500">Last updated: {formatDateTime(defaultRule?.updatedAt)}</p>
               <div className="mt-4 flex gap-2">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="input-field"
-                  placeholder="New price"
+                  placeholder="2.000.000"
                   value={defaultPriceInput}
-                  onChange={(e) => setDefaultPriceInput(e.target.value)}
+                  onChange={(e) => setDefaultPriceInput(formatNumberWithDots(e.target.value))}
                 />
                 <button
                   type="button"
@@ -243,7 +245,14 @@ const PricingTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-primary-700 mb-2">Amount</label>
-                <input type="number" className="input-field" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="input-field"
+                  placeholder="2.000.000"
+                  value={amount}
+                  onChange={(e) => setAmount(formatNumberWithDots(e.target.value))}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-primary-700 mb-2">Start Date</label>

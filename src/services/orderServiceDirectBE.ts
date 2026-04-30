@@ -8,7 +8,7 @@ const BASE_URL = import.meta.env.VITE_ORDER_SERVICE_URL || '/bff';
 
 // Import CalendarDay type from types to avoid duplicate
 import type { CalendarDay } from '../types';
-import { ApiError } from './errors';
+import { ApiError, extractApiErrorMessage } from './errors';
 
 export interface CalendarResponse {
   month: string; // YYYY-MM
@@ -181,7 +181,7 @@ async function apiRequest<T>(
       const errorData = await response.json().catch(() => null);
       console.error('API Error Response:', errorData);
       throw new ApiError(
-        errorData?.message || `HTTP ${response.status}: ${response.statusText}`,
+        extractApiErrorMessage(errorData, response.status, response.statusText),
         response.status,
         errorData
       );

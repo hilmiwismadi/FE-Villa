@@ -125,15 +125,6 @@ const Calendar: React.FC<CalendarProps> = ({
     return dayData.label || dayData.customPriceLabel || dayData.pricingLabel || null;
   };
 
-  const getPriceSourceLabel = (dayData?: CalendarDay): string | null => {
-    if (!dayData?.priceSource) return null;
-    if (dayData.priceSource === 'custom_onetime') return 'One-time custom pricing';
-    if (dayData.priceSource === 'custom_weekly') return 'Weekly custom pricing';
-    if (dayData.priceSource === 'default') return 'Default pricing';
-    if (dayData.priceSource === 'none') return 'No price configured';
-    return null;
-  };
-
   const defaultMonthPrice = useMemo(() => {
     if (!calendarData || calendarData.length === 0) return null;
 
@@ -288,22 +279,27 @@ const Calendar: React.FC<CalendarProps> = ({
             typeof price === 'number' &&
             typeof defaultMonthPrice === 'number' &&
             price !== defaultMonthPrice;
-          const hasCustomPricing = Boolean(customPricingLabel) && (dayData?.source === 'custom' || hasCustomPricingByPrice);
-          const customPricingTooltip = blocked
-            ? (dayData?.blockReason || customPricingLabel)
-            : (customPricingLabel || getPriceSourceLabel(dayData));
+          const hasCustomPricing = Boolean(customPricingLabel) || hasCustomPricingByPrice;
+          const customPricingTooltip = customPricingLabel;
 
           if (readOnly) {
             return (
               <div
                 key={date.toString()}
-                onClick={() => setTappedDate(tappedDate === dateStr ? null : dateStr)}
+                onClick={() => {
+                  if (onDateSelect) {
+                    onDateSelect(date);
+                    return;
+                  }
+                  setTappedDate(tappedDate === dateStr ? null : dateStr);
+                }}
                 className={`
                   relative group aspect-square flex flex-col items-center justify-center text-sm rounded transition-all
                   ${disabled ? 'text-primary-300' : 'text-primary-900'}
                   ${isToday(date) ? 'border-2 border-gold-600' : ''}
                   ${booked || blocked ? 'bg-primary-200 line-through' : ''}
                   ${(isWeekend || hasCustomPricing) && !disabled ? 'text-red-600 font-semibold' : ''}
+                  ${onDateSelect ? 'cursor-pointer hover:bg-primary-100' : ''}
                 `}
               >
                 <span>{format(date, 'd')}</span>

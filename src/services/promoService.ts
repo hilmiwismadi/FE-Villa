@@ -3,7 +3,7 @@
  * Base URL: http://localhost:4002 (dev) | http://<VPS_IP>:9999 (prod)
  */
 
-import { ApiError } from './errors';
+import { ApiError, extractApiErrorMessage } from './errors';
 
 const BASE_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
 
@@ -139,7 +139,7 @@ async function apiRequest<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       throw new ApiError(
-        errorData?.message || `HTTP ${response.status}: ${response.statusText}`,
+        extractApiErrorMessage(errorData, response.status, response.statusText),
         response.status,
         errorData
       );

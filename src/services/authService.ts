@@ -1,4 +1,4 @@
-import { ApiError } from './errors';
+import { ApiError, extractApiErrorMessage } from './errors';
 
 const BASE_URL = import.meta.env.VITE_BFF_URL || '';
 
@@ -36,7 +36,7 @@ async function apiRequest<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       throw new ApiError(
-        errorData?.details?.message || errorData?.details?.error || errorData?.error || `HTTP ${response.status}: ${response.statusText}`,
+        extractApiErrorMessage(errorData, response.status, response.statusText),
         response.status,
         errorData
       );

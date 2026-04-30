@@ -1,4 +1,4 @@
-import { ApiError } from './errors';
+import { ApiError, extractApiErrorMessage } from './errors';
 
 const BFF_URL = import.meta.env.VITE_BFF_URL || 'http://localhost:3100';
 
@@ -26,7 +26,7 @@ async function bffRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      const message = errorData?.details?.message || errorData?.details?.error || errorData?.error || `HTTP ${response.status}`;
+      const message = extractApiErrorMessage(errorData, response.status, response.statusText);
       throw new ApiError(message, response.status, errorData);
     }
     return response.json();

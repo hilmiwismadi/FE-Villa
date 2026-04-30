@@ -28,6 +28,53 @@ const formatDate = (dateStr: string) => {
   }).format(new Date(dateStr));
 };
 
+const YEAR_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+
+const toSafeNumber = (value: unknown): number => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const digitsOnly = value.replace(/[^\d-]/g, '');
+    const parsed = Number(digitsOnly);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getMonthIndex = (rawItem: Record<string, unknown>): number => {
+  const monthValue = rawItem.month;
+  if (typeof monthValue === 'number' && monthValue >= 1 && monthValue <= 12) {
+    return monthValue - 1;
+  }
+
+  if (typeof monthValue === 'string') {
+    const numericMonth = Number(monthValue);
+    if (Number.isFinite(numericMonth) && numericMonth >= 1 && numericMonth <= 12) {
+      return numericMonth - 1;
+    }
+  }
+
+  const label = String(rawItem.label ?? '').toLowerCase();
+  const monthFromLabel = YEAR_MONTH_LABELS.findIndex((monthLabel) => label.includes(monthLabel.toLowerCase()));
+  if (monthFromLabel >= 0) {
+    return monthFromLabel;
+  }
+
+  const dateValue = rawItem.date;
+  if (typeof dateValue === 'string') {
+    const parsedDate = new Date(dateValue);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.getMonth();
+    }
+  }
+
+  return -1;
+};
+
 const DashboardTab: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [revenue, setRevenue] = useState<RevenueResponse | null>(null);
@@ -72,14 +119,66 @@ const DashboardTab: React.FC = () => {
     load();
   }, []);
 
+  const normalizedRevenueBreakdown = useMemo(() => {
+    const currentMonthRevenue = toSafeNumber(dashboard?.currentMonthRevenue);
+    const initialMonths = YEAR_MONTH_LABELS.map((label) => ({
+      label,
+      revenue: 0,
+      bookings: 0,
+    }));
+
+    if (!revenue?.breakdown?.length) {
+      return initialMonths;
+    }
+
+    const mergedMonths = [...initialMonths];
+    const rawBreakdown: unknown[] = Array.isArray(revenue.breakdown) ? revenue.breakdown : [];
+
+    rawBreakdown.forEach((item) => {
+      if (typeof item !== 'object' || item === null) return;
+      const rawItem = item as Record<string, unknown>;
+      const monthIndex = getMonthIndex(rawItem);
+      if (monthIndex < 0 || monthIndex > 11) return;
+
+      mergedMonths[monthIndex] = {
+        label: YEAR_MONTH_LABELS[monthIndex],
+        revenue: toSafeNumber(
+          rawItem.revenue ??
+          rawItem.amount ??
+          rawItem.total ??
+          rawItem.value ??
+          rawItem.monthRevenue ??
+          rawItem.income
+        ),
+        bookings: toSafeNumber(
+          rawItem.bookings ??
+          rawItem.bookingCount ??
+          rawItem.orders ??
+          rawItem.orderCount
+        ),
+      };
+    });
+
+    const hasAnyRevenue = mergedMonths.some((month) => month.revenue > 0);
+    if (!hasAnyRevenue && currentMonthRevenue > 0) {
+      const currentMonthIndex = new Date().getMonth();
+      mergedMonths[currentMonthIndex] = {
+        ...mergedMonths[currentMonthIndex],
+        revenue: currentMonthRevenue,
+      };
+    }
+
+    return mergedMonths;
+  }, [revenue, dashboard?.currentMonthRevenue]);
+
   const revenueBars = useMemo(() => {
-    if (!revenue?.breakdown?.length) return [];
-    const maxRevenue = Math.max(...revenue.breakdown.map((item) => item.revenue), 1);
-    return revenue.breakdown.map((item) => ({
+    if (!normalizedRevenueBreakdown.length) return [];
+    const maxRevenue = Math.max(...normalizedRevenueBreakdown.map((item) => item.revenue), 1);
+    return normalizedRevenueBreakdown.map((item) => ({
       ...item,
       height: Math.max((item.revenue / maxRevenue) * 100, 3),
     }));
-  }, [revenue]);
+  }, [normalizedRevenueBreakdown]);
 
   if (loading) {
     return (
@@ -148,19 +247,24 @@ const DashboardTab: React.FC = () => {
           <>
             <div className="flex items-end gap-2 h-52 border-b border-primary-200 pb-4">
               {revenueBars.map((bar) => (
-                <div key={bar.label} className="flex-1 min-w-0">
-                  <div
-                    className="w-full bg-blue-500 rounded-t-md hover:opacity-90 transition-opacity"
-                    style={{ height: `${bar.height}%` }}
-                    title={`${bar.label}: ${formatCurrency(bar.revenue)} (${bar.bookings} bookings)`}
-                  />
-                  <p className="text-xs text-primary-600 mt-2 text-center truncate">{bar.label}</p>
+                <div key={bar.label} className="flex-1 min-w-0 flex flex-col h-full">
+                  <div className="flex-1 flex items-end">
+                    <div
+                      className="w-full bg-primary-500 rounded-t-md hover:bg-primary-400 transition-colors"
+                      style={{ height: `${bar.height}%` }}
+                      title={`${bar.label}: ${formatCurrency(bar.revenue)} (${bar.bookings} bookings)`}
+                    />
+                  </div>
+                  <p className="text-xs text-primary-600 mt-2 text-center truncate shrink-0">{bar.label}</p>
+                  {bar.revenue > 0 && (
+                    <p className="text-[10px] text-primary-700 text-center truncate shrink-0">{formatCurrency(bar.revenue)}</p>
+                  )}
                 </div>
               ))}
             </div>
             <p className="text-sm text-primary-600 mt-4">
-              Total: {formatCurrency(revenue?.totalRevenue || 0)} · {revenue?.totalBookings || 0} bookings ·{' '}
-              {revenue?.totalNights || 0} nights
+              Total: {formatCurrency(toSafeNumber(revenue?.totalRevenue))} · {toSafeNumber(revenue?.totalBookings)} bookings ·{' '}
+              {toSafeNumber(revenue?.totalNights)} nights
             </p>
           </>
         )}

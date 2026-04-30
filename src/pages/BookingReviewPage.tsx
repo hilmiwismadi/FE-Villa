@@ -6,6 +6,7 @@ import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
 import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderServiceDirectBE';
 import { normalizePhoneNumber } from '../utils/phone';
+import { stripStructuredErrorPrefix } from '../services/errors';
 
 const orderCreateInFlight = new Map<string, Promise<OrderResponse>>();
 
@@ -228,7 +229,7 @@ const BookingReviewPage: React.FC = () => {
         });
         setPromoSuccess(t.booking.calendar.discountApplied);
       } else {
-        setPromoError(response.reason || t.booking.review.invalidPromo);
+        setPromoError(stripStructuredErrorPrefix(response.reason) || t.booking.review.invalidPromo);
         setAppliedPromo(null);
       }
     } catch (error) {

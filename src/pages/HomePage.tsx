@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import heroImage from '../assets/images/hero.png';
 import Calendar from '../components/Calendar';
@@ -10,8 +10,10 @@ import { getCalendar, ApiError } from '../services/orderServiceDirectBE';
 
 const HomePage: React.FC = () => {
   const { t, localePath } = useTranslation();
+  const navigate = useNavigate();
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthLoading, setMonthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load initial month calendar data on mount (only once, not on every render)
@@ -21,9 +23,13 @@ const HomePage: React.FC = () => {
   }, []); // Empty dependency array = runs only on mount
 
   // Fetch calendar data for current month
-  const fetchCalendarData = async (month: string) => {
+  const fetchCalendarData = async (month: string, preserveCalendar = false) => {
     try {
-      setLoading(true);
+      if (preserveCalendar) {
+        setMonthLoading(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       const response = await getCalendar(month);
       setCalendarData(response.days);
@@ -37,6 +43,7 @@ const HomePage: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setMonthLoading(false);
     }
   };
 
@@ -194,9 +201,14 @@ const HomePage: React.FC = () => {
               <Calendar
                 readOnly
                 calendarData={calendarData}
-                onMonthChange={fetchCalendarData}
+                onMonthChange={(month) => fetchCalendarData(month, true)}
+                onDateSelect={() => navigate(localePath('/book/calendar'))}
                 hidePrices={true}
               />
+            )}
+
+            {monthLoading && !loading && (
+              <p className="text-center text-sm text-primary-600 mt-3">Loading selected month...</p>
             )}
 
             {/* Book Now Button */}
