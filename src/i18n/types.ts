@@ -223,4 +223,26 @@ export interface Translations {
       phone: string;
     };
   };
+  errors: {
+    validationError: string;
+    notFound: string;
+    forbidden: string;
+    conflict: string;
+    internalError: string;
+    orderNotFound: string;
+    orderDateConflict: string;
+    orderBlockedDate: string;
+    orderNoPricing: string;
+    orderInvalidStatus: string;
+    orderPaymentExpired: string;
+    orderPromoFailed: string;
+    promoNotFound: string;
+    promoInactive: string;
+    promoExpired: string;
+    promoMaxUsage: string;
+    promoAlreadyExists: string;
+    promoDayMismatch: string;
+    promoTriggerNotMet: string;
+    unknown: string;
+  };
 }

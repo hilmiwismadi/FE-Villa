@@ -6,7 +6,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
 import { normalizePhoneNumber, isValidPhoneNumber } from '../utils/phone';
 import { useAuth } from '../contexts/AuthContext';
-import { stripStructuredErrorPrefix } from '../services/errors';
+import { stripStructuredErrorPrefix, getAppCodeI18nKey } from '../services/errors';
 
 const BookingFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -239,7 +239,8 @@ const BookingFormPage: React.FC = () => {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        setPromoError(error.message || t.booking.calendar.invalidPromo);
+        const key = getAppCodeI18nKey(error.appCode);
+        setPromoError(key ? t.errors[key] : error.message || t.booking.calendar.invalidPromo);
       } else {
         setPromoError(t.booking.calendar.invalidPromo);
       }

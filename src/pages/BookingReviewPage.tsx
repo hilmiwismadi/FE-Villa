@@ -6,7 +6,7 @@ import { differenceInDays, format } from 'date-fns';
 import { validatePromo as promoValidatePromo, ApiError } from '../services/promoServiceDirectBE';
 import { createOrder, getOrder, type CreateOrderRequest, type OrderResponse } from '../services/orderServiceDirectBE';
 import { normalizePhoneNumber } from '../utils/phone';
-import { stripStructuredErrorPrefix } from '../services/errors';
+import { stripStructuredErrorPrefix, getAppCodeI18nKey } from '../services/errors';
 
 const orderCreateInFlight = new Map<string, Promise<OrderResponse>>();
 
@@ -95,7 +95,8 @@ const BookingReviewPage: React.FC = () => {
           });
         } catch (error) {
           if (error instanceof ApiError) {
-            setOrderError(error.message || 'Failed to load existing order');
+            const key = getAppCodeI18nKey(error.appCode);
+            setOrderError(key ? t.errors[key] : error.message || 'Failed to load existing order');
           } else {
             setOrderError('Failed to load existing order');
           }
@@ -170,19 +171,18 @@ const BookingReviewPage: React.FC = () => {
         });
       } catch (error) {
         if (error instanceof ApiError) {
-          // Handle 409 conflict - dates not available or phone number conflict
-          if (error.status === 409) {
-            console.error('[BookingReviewPage] 409 Conflict Error from POST /order/create:', error);
-
-            // This could be due to phone number conflict (BE issue) or actual date availability
-            setOrderError('Unable to create order. This might be because your phone number has been used before or the dates are not available. Please try again or contact support.');
+          const key = getAppCodeI18nKey(error.appCode);
+          if (key) {
+            setOrderError(t.errors[key]);
+          } else if (error.status === 409) {
+            setOrderError(t.errors.orderDateConflict);
           } else if (error.status === 400) {
-            setOrderError('Invalid booking data. Please check your information and try again.');
+            setOrderError(t.errors.validationError);
           } else {
-            setOrderError(error.message || 'Failed to create order');
+            setOrderError(error.message || t.errors.unknown);
           }
         } else {
-          setOrderError('Failed to create order');
+          setOrderError(t.errors.unknown);
         }
       } finally {
         setCreatingOrder(false);
@@ -234,7 +234,8 @@ const BookingReviewPage: React.FC = () => {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        setPromoError(error.message || t.booking.review.invalidPromo);
+        const key = getAppCodeI18nKey(error.appCode);
+        setPromoError(key ? t.errors[key] : error.message || t.booking.review.invalidPromo);
       } else {
         setPromoError(t.booking.review.invalidPromo);
       }

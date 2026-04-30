@@ -230,5 +230,27 @@
       "email": "Email: info@villasekipan.com",
       "phone": "Telepon: +62 XXX XXX XXXX"
     }
+  },
+  "errors": {
+    "validationError": "Mohon periksa kembali data yang Anda masukkan.",
+    "notFound": "Resource yang diminta tidak ditemukan.",
+    "forbidden": "Anda tidak memiliki izin untuk melakukan aksi ini.",
+    "conflict": "Terjadi konflik. Silakan coba lagi.",
+    "internalError": "Terjadi kesalahan di server kami. Silakan coba lagi nanti.",
+    "orderNotFound": "Pesanan tidak ditemukan. Mohon periksa referensi pemesanan Anda.",
+    "orderDateConflict": "Tanggal yang dipilih bertabrakan dengan pemesanan yang sudah ada. Silakan pilih tanggal lain.",
+    "orderBlockedDate": "Satu atau lebih tanggal yang dipilih diblokir. Silakan pilih tanggal lain.",
+    "orderNoPricing": "Belum ada harga yang dikonfigurasi untuk tanggal yang dipilih. Silakan hubungi kami.",
+    "orderInvalidStatus": "Pesanan ini tidak dapat diubah dalam status saat ini.",
+    "orderPaymentExpired": "Batas waktu pembayaran telah berakhir. Pesanan Anda telah kedaluwarsa.",
+    "orderPromoFailed": "Kode promo tidak dapat diterapkan. Silakan coba tanpa promo atau gunakan kode lain.",
+    "promoNotFound": "Kode promo ini tidak ada.",
+    "promoInactive": "Kode promo ini sudah dinonaktifkan.",
+    "promoExpired": "Kode promo ini sudah kedaluwarsa.",
+    "promoMaxUsage": "Kode promo ini sudah mencapai batas penggunaan.",
+    "promoAlreadyExists": "Promo dengan kode ini sudah ada.",
+    "promoDayMismatch": "Promo ini tidak berlaku untuk malam-malam dalam pemesanan Anda.",
+    "promoTriggerNotMet": "Anda belum memenuhi syarat untuk menggunakan promo ini.",
+    "unknown": "Terjadi kesalahan yang tidak terduga. Silakan coba lagi."
   }
 }

@@ -16,7 +16,7 @@ import {
   type CustomPricingRuleResponse
 } from '../services/orderServiceDirectBE';
 import { validatePromo } from '../services/promoServiceDirectBE';
-import { stripStructuredErrorPrefix } from '../services/errors';
+import { stripStructuredErrorPrefix, getAppCodeI18nKey } from '../services/errors';
 
 const BookingCalendarPage: React.FC = () => {
   const navigate = useNavigate();
@@ -322,7 +322,8 @@ const BookingCalendarPage: React.FC = () => {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        setPromoError(error.message || t.booking.calendar.invalidPromo);
+        const key = getAppCodeI18nKey(error.appCode);
+        setPromoError(key ? t.errors[key] : error.message || t.booking.calendar.invalidPromo);
       } else {
         setPromoError(t.booking.calendar.invalidPromo);
       }
@@ -364,8 +365,12 @@ const BookingCalendarPage: React.FC = () => {
 
       navigate(localePath('/book/form'));
     } catch (error) {
-      console.error('[handleContinue] Availability check failed:', error);
-      toast('Failed to check availability. Please try again.', 'error');
+      if (error instanceof ApiError) {
+        const key = getAppCodeI18nKey(error.appCode);
+        toast(key ? t.errors[key] : t.errors.unknown, 'error');
+      } else {
+        toast(t.errors.unknown, 'error');
+      }
     } finally {
       setCheckingAvailability(false);
     }

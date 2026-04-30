@@ -68,6 +68,33 @@ export function extractApiErrorMessage(errorData: unknown, status: number, statu
   return `HTTP ${status}: ${statusText}`;
 }
 
+const APP_CODE_TO_I18N_KEY: Record<string, keyof import('../i18n/types').Translations['errors']> = {
+  VALIDATION_ERROR: 'validationError',
+  NOT_FOUND: 'notFound',
+  FORBIDDEN: 'forbidden',
+  CONFLICT: 'conflict',
+  INTERNAL_ERROR: 'internalError',
+  ORDER_NOT_FOUND: 'orderNotFound',
+  ORDER_DATE_CONFLICT: 'orderDateConflict',
+  ORDER_BLOCKED_DATE: 'orderBlockedDate',
+  ORDER_NO_PRICING: 'orderNoPricing',
+  ORDER_INVALID_STATUS: 'orderInvalidStatus',
+  ORDER_PAYMENT_EXPIRED: 'orderPaymentExpired',
+  ORDER_PROMO_FAILED: 'orderPromoFailed',
+  PROMO_NOT_FOUND: 'promoNotFound',
+  PROMO_INACTIVE: 'promoInactive',
+  PROMO_EXPIRED: 'promoExpired',
+  PROMO_MAX_USAGE: 'promoMaxUsage',
+  PROMO_ALREADY_EXISTS: 'promoAlreadyExists',
+  PROMO_DAY_MISMATCH: 'promoDayMismatch',
+  PROMO_TRIGGER_NOT_MET: 'promoTriggerNotMet',
+};
+
+export function getAppCodeI18nKey(appCode?: string): keyof import('../i18n/types').Translations['errors'] | null {
+  if (!appCode) return null;
+  return APP_CODE_TO_I18N_KEY[appCode] ?? null;
+}
+
 export class ApiError extends Error {
   status?: number;
   details?: unknown;

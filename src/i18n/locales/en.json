@@ -231,5 +231,27 @@
       "email": "Email: info@villasekipan.com",
       "phone": "Phone: +62 XXX XXX XXXX"
     }
+  },
+  "errors": {
+    "validationError": "Please check your input and try again.",
+    "notFound": "The requested resource was not found.",
+    "forbidden": "You do not have permission to perform this action.",
+    "conflict": "A conflict occurred. Please try again.",
+    "internalError": "Something went wrong on our end. Please try again later.",
+    "orderNotFound": "Order not found. Please check your booking reference.",
+    "orderDateConflict": "The selected dates overlap with an existing booking. Please choose different dates.",
+    "orderBlockedDate": "One or more selected dates are blocked. Please choose different dates.",
+    "orderNoPricing": "No pricing is configured for the selected dates. Please contact us.",
+    "orderInvalidStatus": "This order cannot be modified in its current state.",
+    "orderPaymentExpired": "The payment deadline has passed. Your order has expired.",
+    "orderPromoFailed": "The promo code could not be applied. Please try without it or use a different code.",
+    "promoNotFound": "This promo code does not exist.",
+    "promoInactive": "This promo code has been deactivated.",
+    "promoExpired": "This promo code has expired.",
+    "promoMaxUsage": "This promo code has reached its usage limit.",
+    "promoAlreadyExists": "A promo with this code already exists.",
+    "promoDayMismatch": "This promo does not apply to the nights in your booking.",
+    "promoTriggerNotMet": "You do not meet the requirements for this promo.",
+    "unknown": "An unexpected error occurred. Please try again."
   }
 }

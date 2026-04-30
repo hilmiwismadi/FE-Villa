@@ -4,6 +4,7 @@ import { useBooking } from '../contexts/BookingContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { confirmPayment, getOrder, ApiError } from '../services/orderServiceDirectBE';
 import type { OrderResponse } from '../services/orderServiceDirectBE';
+import { getAppCodeI18nKey } from '../services/errors';
 
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
@@ -103,9 +104,10 @@ const PaymentPage: React.FC = () => {
           setLoadingOrder(false);
           isFetchingRef.current = false;
           if (error instanceof ApiError) {
-            setCreateOrderError(error.message);
+            const key = getAppCodeI18nKey(error.appCode);
+            setCreateOrderError(key ? t.errors[key] : error.message || t.errors.unknown);
           } else {
-            setCreateOrderError('Failed to load order details');
+            setCreateOrderError(t.errors.unknown);
           }
         }
       };
@@ -182,9 +184,10 @@ const PaymentPage: React.FC = () => {
     } catch (error) {
       console.error('[PaymentPage] confirmPayment API error:', error);
       if (error instanceof ApiError) {
-        setConfirmPaymentError(error.message || 'Failed to confirm payment');
+        const key = getAppCodeI18nKey(error.appCode);
+        setConfirmPaymentError(key ? t.errors[key] : error.message || t.errors.unknown);
       } else {
-        setConfirmPaymentError('Failed to confirm payment');
+        setConfirmPaymentError(t.errors.unknown);
       }
     } finally {
       setIsSubmitting(false);
