@@ -23,6 +23,7 @@ const PaymentPage: React.FC = () => {
   const [paymentConfirmed] = useState(false);
   const [confirmPaymentError, setConfirmPaymentError] = useState<string | null>(null);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
+  const [rulesConfirmed, setRulesConfirmed] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const promoBreakdown = orderResponse?.promos?.length
@@ -449,14 +450,39 @@ const PaymentPage: React.FC = () => {
               </label>
             </div>
 
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rulesConfirmed}
+                  onChange={(e) => setRulesConfirmed(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <div className="text-sm text-primary-800">
+                  <span className="font-medium">Saya sudah membaca </span>
+                  <a
+                    href="/rules"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-700 underline font-medium"
+                  >
+                    peraturan villa
+                  </a>
+                  <p className="text-primary-600 mt-1">
+                    Bersedia mematuhi Ketentuan dan Peraturan yang villa ini tetapkan.
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <button
               onClick={handleConfirmPayment}
               className={`w-full ${
-                isSubmitting || !transferConfirmed
+                isSubmitting || !transferConfirmed || !rulesConfirmed
                   ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                   : 'btn-gold'
               }`}
-              disabled={isSubmitting || !transferConfirmed}
+              disabled={isSubmitting || !transferConfirmed || !rulesConfirmed}
             >
               {isSubmitting ? 'Confirming...' : t.booking.payment.submitBooking}
             </button>
