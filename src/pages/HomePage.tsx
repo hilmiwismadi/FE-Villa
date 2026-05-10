@@ -22,6 +22,15 @@ const HomePage: React.FC = () => {
     fetchCalendarData(initialMonth);
   }, []); // Empty dependency array = runs only on mount
 
+  // Poll calendar data every 60s to pick up expired/released dates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const currentMonth = format(new Date(), 'yyyy-MM');
+      fetchCalendarData(currentMonth, true);
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Fetch calendar data for current month
   const fetchCalendarData = async (month: string, preserveCalendar = false) => {
     try {

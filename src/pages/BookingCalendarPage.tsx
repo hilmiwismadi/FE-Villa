@@ -165,6 +165,15 @@ const BookingCalendarPage: React.FC = () => {
     loadCalendarMonth(format(currentMonth, 'yyyy-MM'));
   }, []);
 
+  // Poll calendar data every 60s to pick up expired/released dates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const currentMonth = format(new Date(), 'yyyy-MM');
+      loadCalendarMonth(currentMonth);
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Debug log for selectedDates changes
   useEffect(() => {
     console.log('[BookingCalendarPage] selectedDates changed:', selectedDates.map(d => format(d, 'yyyy-MM-dd')));
