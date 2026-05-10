@@ -190,7 +190,7 @@ const BookingReviewPage: React.FC = () => {
     };
 
     createOrderOnReview();
-  }, []); // Empty deps - run only once on mount
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect if no booking data
   if (!dateRange.checkIn || !dateRange.checkOut || (!guestInfo && !formData.phone)) {

@@ -108,6 +108,9 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     setPricing({ originalPrice: 0, discountAmount: 0, finalPrice: 0 });
     sessionStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PROMO_KEY);
+    Object.keys(sessionStorage)
+      .filter((key) => key.startsWith('order-created-'))
+      .forEach((key) => sessionStorage.removeItem(key));
   };
 
   return (
